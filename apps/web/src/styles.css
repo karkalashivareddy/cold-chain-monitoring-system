@@ -1,0 +1,293 @@
+@import "tailwindcss";
+
+@theme {
+  --color-abyss: #07111f;
+  --color-deep: #0a1626;
+  --color-surface: #0d1b2a;
+  --color-elevated: #12263a;
+  --color-line: #1b334b;
+  --color-ice: #e8f3ff;
+  --color-mist: #93a9c2;
+  --color-cyan: #38bdf8;
+  --color-teal: #2dd4bf;
+  --color-amber: #fbbf24;
+  --color-rose: #fb7185;
+  --color-violet: #a78bfa;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, ui-monospace, monospace;
+  --radius-4xl: 2rem;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-abyss);
+    color: var(--color-ice);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgb(56 189 248 / 0.3);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-cyan);
+    outline-offset: 2px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #1e3a55 transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #1e3a55;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Surfaces                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.panel {
+  background:
+    linear-gradient(180deg, rgb(13 27 42 / 0.94), rgb(8 20 34 / 0.9));
+  border: 1px solid rgb(120 180 240 / 0.12);
+  border-radius: 1.25rem;
+  box-shadow:
+    0 30px 70px -50px rgb(0 0 0 / 0.95),
+    inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+.panel-soft {
+  background: rgb(13 27 42 / 0.6);
+  border: 1px solid rgb(120 180 240 / 0.1);
+  border-radius: 1rem;
+}
+
+.panel-interactive {
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 240ms ease,
+    box-shadow 240ms ease;
+}
+
+.panel-interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgb(56 189 248 / 0.34);
+  box-shadow:
+    0 34px 80px -52px rgb(0 0 0 / 0.95),
+    0 0 0 1px rgb(56 189 248 / 0.08);
+}
+
+.hairline {
+  background: linear-gradient(90deg, transparent, rgb(56 189 248 / 0.22), transparent);
+  height: 1px;
+}
+
+.grid-field {
+  background-image:
+    linear-gradient(rgb(56 189 248 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(56 189 248 / 0.055) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.aurora {
+  background:
+    radial-gradient(48rem 30rem at 15% -10%, rgb(56 189 248 / 0.18), transparent 60%),
+    radial-gradient(40rem 28rem at 92% 4%, rgb(45 212 191 / 0.12), transparent 62%),
+    radial-gradient(36rem 26rem at 60% 100%, rgb(167 139 250 / 0.08), transparent 65%);
+}
+
+.text-gradient {
+  background: linear-gradient(92deg, #f1f9ff 8%, #7dd3fc 48%, #5eead4 92%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+
+.stat-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  background: var(--color-cyan);
+  color: #04121f;
+  font-weight: 600;
+  transition: top 150ms ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Landing motion                                                            */
+/* -------------------------------------------------------------------------- */
+
+@keyframes fg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fg-sweep {
+  0% {
+    transform: translateX(-60%);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(160%);
+    opacity: 0;
+  }
+}
+
+@keyframes fg-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes fg-drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-rise {
+  animation: fg-rise 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-sweep {
+  animation: fg-sweep 7s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: fg-pulse 2.6s ease-in-out infinite;
+}
+
+.animate-drift {
+  animation: fg-drift 6s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-rise,
+  .animate-sweep,
+  .animate-pulse-slow,
+  .animate-drift {
+    animation: none !important;
+  }
+
+  .panel-interactive:hover {
+    transform: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Leaflet (dark treatment for the allow-listed OSM tiles)                   */
+/* -------------------------------------------------------------------------- */
+
+.leaflet-container {
+  background: #07111f;
+  font-family: var(--font-sans);
+}
+
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(185deg) brightness(0.72) contrast(1.05) saturate(0.7);
+}
+
+.leaflet-control-attribution {
+  background: rgb(7 17 31 / 0.8) !important;
+  color: #93a9c2 !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #7dd3fc !important;
+}
+
+.leaflet-bar a {
+  background: #0d1b2a !important;
+  color: #e8f3ff !important;
+  border-color: #1b334b !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #0d1b2a;
+  color: #e8f3ff;
+  border: 1px solid #1b334b;
+  box-shadow: 0 18px 48px -24px rgb(0 0 0 / 0.9);
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px;
+}

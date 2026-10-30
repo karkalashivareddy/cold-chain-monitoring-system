@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: frostguard_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Validate clean-schema migrations and SQL controls
+        run: npm run db:deploy && npm run db:sql
+        env:
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/frostguard_test
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build API and web
+        run: npm run build
+
+      - name: Run MySQL integration tests
+        run: npm test
+        env:
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/frostguard_test
+
+      - name: Install Chromium for browser tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the API and run browser tests
+        run: |
+          node apps/api/dist/server.js > "$RUNNER_TEMP/frostguard-api.log" 2>&1 &
+          api_pid=$!
+          cleanup() {
+            kill "$api_pid" 2>/dev/null || true
+            wait "$api_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4000/health/ready > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then
+              cat "$RUNNER_TEMP/frostguard-api.log"
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4000/health/ready > /dev/null
+          npm run test:e2e -w @frostguard/web
+        env:
+          NODE_ENV: test
+          API_PORT: 4000
+          API_ORIGIN: http://127.0.0.1:4000
+          WEB_ORIGIN: http://127.0.0.1:5173
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/frostguard_test
+          JWT_ACCESS_SECRET: test-access-secret-0123456789abcdef0123456789abcdef
+          JWT_REFRESH_SECRET: test-refresh-secret-0123456789abcdef0123456789abcdef
+          DEVICE_HMAC_SECRET: test-device-hmac-secret-0123456789abcdef0123456789
+          RATE_LIMIT_MAX: 100000
+          LOGIN_RATE_LIMIT_MAX: 1000
+          LOG_LEVEL: silent
+
+      - name: Check dependency advisories
+        run: |
+          npm audit --json > npm-audit.json || true
+          node scripts/check-audit.mjs npm-audit.json
