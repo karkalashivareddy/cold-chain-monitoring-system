@@ -7,10 +7,31 @@ import { getOverview } from "../dashboard/dashboard.service";
 
 const DAY = 86_400_000;
 
+/** Prefix spreadsheet formula-like text before CSV serialization. Numeric values stay numeric. */
+export function sanitizeSpreadsheetCell(value: string): string {
+  let index = 0;
+  while (index < value.length && (value.charCodeAt(index) <= 0x20 || value.charCodeAt(index) === 0xfeff)) index += 1;
+  return "=+-@".includes(value[index] ?? "\0") ? `'${value}` : value;
+}
+
+export function sanitizeDownloadFilename(value: string): string {
+  const basename = value.split(/[\\/]/).pop() ?? "";
+  const filename = basename.replace(/[^A-Za-z0-9._-]/g, "_").replace(/^\.+/, "").slice(0, 120);
+  return filename || "frostguard-report.csv";
+}
+
 function csv(res: Response, filename: string, rows: Record<string, unknown>[]) {
-  const body = stringify(rows, { header: true });
+  const safeRows = rows.map((row) =>
+    Object.fromEntries(
+      Object.entries(row).map(([key, value]) => [
+        key,
+        typeof value === "string" ? sanitizeSpreadsheetCell(value) : value,
+      ])
+    )
+  );
+  const body = stringify(safeRows, { header: true });
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.setHeader("Content-Disposition", `attachment; filename="${sanitizeDownloadFilename(filename)}"`);
   res.send(body);
 }
 

@@ -28,6 +28,7 @@ import { auditRouter } from "./modules/audit/audit.routes";
 import { usersRouter } from "./modules/users/users.routes";
 import { reportsRouter } from "./modules/reports/reports.routes";
 import { dbmsRouter } from "./modules/dbms/dbms.routes";
+import { openApiDocument } from "./openapi";
 
 export function createApp(): Express {
   const app = express();
@@ -97,6 +98,22 @@ export function createApp(): Express {
   app.use("/health", healthRouter);
 
   const api = express.Router();
+  api.get("/openapi.json", (_req, res) => {
+    res.json(openApiDocument);
+  });
+  api.get("/docs", (_req, res) => {
+    res.type("html").send(`<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FROSTGUARD API Documentation</title></head>
+  <body>
+    <main>
+      <h1>FROSTGUARD API</h1>
+      <p>Version 1 cold-chain monitoring and traceability API. Protected resources are organization-scoped and require server-side authorization.</p>
+      <p><a href="/api/v1/openapi.json">Open the OpenAPI 3.1 specification</a></p>
+    </main>
+  </body>
+</html>`);
+  });
   api.get("/", (_req, res) => {
     res.json({
       success: true,
@@ -104,6 +121,7 @@ export function createApp(): Express {
         name: "FROSTGUARD API",
         version: "1.0.0",
         documentation: "/api/v1/docs",
+        openapi: "/api/v1/openapi.json",
         time: new Date().toISOString(),
       },
     });

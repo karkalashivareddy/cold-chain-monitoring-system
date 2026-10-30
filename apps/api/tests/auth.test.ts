@@ -3,6 +3,22 @@ import request from "supertest";
 import { app, cookieValue, login, bearer, NORTHLINE } from "./helpers";
 
 describe("authentication and session lifecycle", () => {
+  it("serves the API documentation and machine-readable route specification", async () => {
+    const page = await request(app).get("/api/v1/docs");
+    expect(page.status).toBe(200);
+    expect(page.headers["content-type"]).toContain("text/html");
+    expect(page.text).toContain("/api/v1/openapi.json");
+
+    const spec = await request(app).get("/api/v1/openapi.json");
+    expect(spec.status).toBe(200);
+    expect(spec.body.openapi).toBe("3.1.0");
+    expect(spec.body.paths["/telemetry/readings"].post.security).toEqual([{ deviceKey: [] }]);
+    expect(spec.body.paths["/incidents/{id}/resolve"].post).toBeDefined();
+    expect(spec.body.paths["/shipments/{id}/dispatch"].post.requestBody).toBeUndefined();
+    expect(spec.body.paths["/health/ready"].get.security).toEqual([]);
+    expect(spec.body.paths["/reports/temperature"].get.responses["200"].content["text/csv"]).toBeDefined();
+  });
+
   it("rejects an invalid password without revealing whether the account exists", async () => {
     const res = await request(app)
       .post("/api/v1/auth/login")
