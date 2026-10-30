@@ -24,7 +24,7 @@ This report records local evidence after Phase 24. Existing tracked and untracke
 | Prior clean schema and SQL control validation | PASS | Separate disposable `frostguard_migration_test`; four SQL controls/34 statements |
 | `npm.cmd audit --json` and `--omit=dev` | RESIDUAL | Three high findings remain on Prisma config/deepmerge-ts dependency path; assessed in `docs/security/DEPENDENCY_ADVISORY_ASSESSMENT.md` |
 | `.github/workflows/ci.yml` parser | PASS locally | Parsed with installed `js-yaml`; no actionlint or remote workflow result |
-| GitHub Actions remote runs | FAIL, fixes in progress | Run `41097058923` (SHA `50c8562`) failed because root lacks `db:deploy`; run `41097660298` (SHA `beccc57`) applied migrations but SQL setup lacked required test JWT env. Workflow now has workspace script paths and test-only config; next remote run pending |
+| GitHub Actions remote runs | FAIL, fixes in progress | Run `41098318439` (SHA `d35124b`) passed migration, SQL, typecheck, lint and build; test global setup then failed because its SQL child lacked JWT env. Workflow now supplies test-only config to both migration and test steps; rerun pending |
 | Browser screenshots | PASS, partial routes | Fresh landing/dashboard at 1366x768 and 390x844; all other pages had functional DOM smoke, not screenshot review |
 | Docker/deployment smoke | BLOCKED | Docker engine unavailable; no production hosting deployment or paid resources used |
 | `git diff --check` | PASS | No whitespace errors; line-ending conversion notices only |
