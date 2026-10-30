@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
+import { callProcedure } from "../../lib/sql";
 import { sha256 } from "../../security/tokens";
 
 export type DbmsOverview = {
@@ -180,7 +181,13 @@ export async function verifyRollback(orgId: string, actorId: string) {
 }
 
 export async function incidentSummary(orgId: string) {
-  return prisma.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`CALL sp_incident_summary(${orgId})`);
+  return callProcedure<{
+    status: string;
+    severity: string;
+    total: number | bigint;
+    averageRiskScore: string | number | null;
+    oldestOpenedAt: Date | null;
+  }>("sp_incident_summary", [orgId]);
 }
 
 /**

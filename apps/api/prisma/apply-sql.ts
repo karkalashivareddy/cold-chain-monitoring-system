@@ -49,7 +49,7 @@ async function main() {
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           const ignorable =
-            /Duplicate key name|Duplicate foreign key constraint name|already exists|check constraint .* already exists/i.test(
+            /Duplicate key name|Duplicate foreign key constraint name|Duplicate check constraint name|already exists|check constraint .* already exists/i.test(
               message
             );
           if (ignorable) {
