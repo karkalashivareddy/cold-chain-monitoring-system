@@ -1,0 +1,686 @@
+// FROSTGUARD relational schema — MySQL 8.4 LTS / InnoDB.
+// Conventions: identifiers are camelCase in the ORM, tables are snake_case in MySQL.
+// All timestamps are stored in UTC. Decimal columns use explicit precision.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Identity & tenancy                                                        */
+/* -------------------------------------------------------------------------- */
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(160)
+  slug      String   @unique @db.VarChar(80)
+  timezone  String   @default("UTC") @db.VarChar(64)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships       Membership[]
+  products          Product[]
+  temperatureProfiles TemperatureProfile[]
+  suppliers         Supplier[]
+  batches           Batch[]
+  warehouses        Warehouse[]
+  storageUnits      StorageUnit[]
+  sensors           Sensor[]
+  vehicles          Vehicle[]
+  drivers           Driver[]
+  shipments         Shipment[]
+  excursions        Excursion[]
+  alerts            Alert[]
+  incidents         Incident[]
+  auditLogs         AuditLog[]
+  notifications     NotificationLog[]
+  outboxEvents      OutboxEvent[]
+  simulations       DeviceSimulation[]
+  maintenanceLogs   MaintenanceLog[]
+  idempotency       IdempotencyRecord[]
+
+  @@map("organizations")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique @db.VarChar(200)
+  passwordHash String    @db.VarChar(255)
+  fullName     String    @db.VarChar(160)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  memberships       Membership[]
+  refreshTokens     RefreshToken[]
+  assignedIncidents Incident[]       @relation("IncidentAssignee")
+  createdIncidents  Incident[]       @relation("IncidentCreator")
+  incidentActions   IncidentAction[]
+  acknowledgedAlerts Alert[]         @relation("AlertAcknowledger")
+  auditLogs         AuditLog[]
+  shipmentEvents    ShipmentEvent[]
+  simulations       DeviceSimulation[]
+  notifications     NotificationLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String  @id @default(cuid())
+  key         String  @unique @db.VarChar(40)
+  name        String  @db.VarChar(80)
+  description String? @db.VarChar(255)
+
+  permissions RolePermission[]
+  memberships Membership[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  key         String  @unique @db.VarChar(80)
+  description String? @db.VarChar(255)
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id])
+
+  @@unique([orgId, userId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("memberships")
+}
+
+model RefreshToken {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique @db.VarChar(64)
+  familyId     String    @db.VarChar(40)
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?   @db.VarChar(40)
+  userAgent    String?   @db.VarChar(255)
+  ip           String?   @db.VarChar(64)
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Catalogue / inventory                                                     */
+/* -------------------------------------------------------------------------- */
+
+model TemperatureProfile {
+  id                  String  @id @default(cuid())
+  orgId               String
+  name                String  @db.VarChar(120)
+  minTemp             Decimal @db.Decimal(5, 2)
+  maxTemp             Decimal @db.Decimal(5, 2)
+  warningMargin       Decimal @default(0.50) @db.Decimal(4, 2)
+  criticalMinTemp     Decimal? @db.Decimal(5, 2)
+  criticalMaxTemp     Decimal? @db.Decimal(5, 2)
+  persistenceReadings Int     @default(2)
+  isDefault           Boolean @default(false)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  products     Product[]
+  batches      Batch[]
+
+  @@unique([orgId, name])
+  @@map("product_temperature_profiles")
+}
+
+model Product {
+  id                   String   @id @default(cuid())
+  orgId                String
+  code                 String   @db.VarChar(40)
+  name                 String   @db.VarChar(160)
+  category             String   @db.VarChar(80)
+  description          String?  @db.Text
+  manufacturer         String?  @db.VarChar(160)
+  storageType          String   @default("FRIDGE") @db.VarChar(20)
+  minTemp              Decimal  @db.Decimal(5, 2)
+  maxTemp              Decimal  @db.Decimal(5, 2)
+  isActive             Boolean  @default(true)
+  temperatureProfileId String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  organization       Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  temperatureProfile TemperatureProfile? @relation(fields: [temperatureProfileId], references: [id], onDelete: SetNull)
+  batches            Batch[]
+
+  @@unique([orgId, code])
+  @@index([orgId, name])
+  @@map("products")
+}
+
+model Supplier {
+  id           String  @id @default(cuid())
+  orgId        String
+  code         String  @db.VarChar(40)
+  name         String  @db.VarChar(160)
+  contactEmail String? @db.VarChar(200)
+  country      String? @db.VarChar(120)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  batches      Batch[]
+
+  @@unique([orgId, code])
+  @@map("suppliers")
+}
+
+model Batch {
+  id                   String    @id @default(cuid())
+  orgId                String
+  productId            String
+  supplierId           String?
+  batchNumber          String    @db.VarChar(60)
+  manufacturedAt       DateTime
+  expiresAt            DateTime
+  quantity             Int
+  remainingQuantity    Int
+  status               String    @default("QUARANTINE") @db.VarChar(20)
+  storageUnitId        String?
+  temperatureProfileId String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  organization       Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  product            Product             @relation(fields: [productId], references: [id])
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  storageUnit        StorageUnit?        @relation(fields: [storageUnitId], references: [id], onDelete: SetNull)
+  temperatureProfile TemperatureProfile? @relation(fields: [temperatureProfileId], references: [id], onDelete: SetNull)
+  shipmentItems      ShipmentItem[]
+
+  @@unique([orgId, productId, batchNumber])
+  @@index([orgId, status])
+  @@index([expiresAt])
+  @@index([storageUnitId])
+  @@map("batches")
+}
+
+model Warehouse {
+  id          String   @id @default(cuid())
+  orgId       String
+  code        String   @db.VarChar(40)
+  name        String   @db.VarChar(160)
+  addressLine String?  @db.VarChar(240)
+  city        String?  @db.VarChar(120)
+  country     String?  @db.VarChar(120)
+  latitude    Decimal? @db.Decimal(9, 6)
+  longitude   Decimal? @db.Decimal(9, 6)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  organization     Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  storageUnits     StorageUnit[]
+  shipmentsAsOrigin Shipment[]      @relation("ShipmentOrigin")
+
+  @@unique([orgId, code])
+  @@map("warehouses")
+}
+
+model StorageUnit {
+  id            String   @id @default(cuid())
+  orgId         String
+  warehouseId   String
+  code          String   @db.VarChar(40)
+  name          String   @db.VarChar(160)
+  type          String   @db.VarChar(20)
+  capacityUnits Int
+  minTemp       Decimal  @db.Decimal(5, 2)
+  maxTemp       Decimal  @db.Decimal(5, 2)
+  status        String   @default("OPERATIONAL") @db.VarChar(20)
+  createdAt     DateTime @default(now())
+
+  organization      Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  warehouse         Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  batches           Batch[]
+  sensorAssignments SensorAssignment[]
+  excursions        Excursion[]
+  maintenanceLogs   MaintenanceLog[]
+
+  @@unique([orgId, code])
+  @@index([warehouseId])
+  @@map("storage_units")
+}
+
+/* -------------------------------------------------------------------------- */
+/*  IoT                                                                       */
+/* -------------------------------------------------------------------------- */
+
+model Sensor {
+  id              String    @id @default(cuid())
+  orgId           String
+  deviceId        String    @unique @db.VarChar(60)
+  name            String    @db.VarChar(160)
+  model           String?   @db.VarChar(120)
+  firmwareVersion String?   @db.VarChar(40)
+  sensorType      String    @default("TEMPERATURE_HUMIDITY") @db.VarChar(40)
+  apiKeyHash      String    @db.VarChar(255)
+  apiKeyPrefix    String    @db.VarChar(16)
+  status          String    @default("OFFLINE") @db.VarChar(20)
+  lastSeenAt      DateTime?
+  calibrationDueAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization  Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  readings      SensorReading[]
+  assignments   SensorAssignment[]
+  excursions    Excursion[]
+  maintenanceLogs MaintenanceLog[]
+  simulations   DeviceSimulation[]
+
+  @@index([orgId, status])
+  @@map("sensors")
+}
+
+model SensorAssignment {
+  id            String    @id @default(cuid())
+  sensorId      String
+  storageUnitId String?
+  shipmentId    String?
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+
+  sensor      Sensor       @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+  storageUnit StorageUnit? @relation(fields: [storageUnitId], references: [id], onDelete: SetNull)
+  shipment    Shipment?    @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
+
+  @@index([sensorId, endedAt])
+  @@index([storageUnitId])
+  @@index([shipmentId])
+  @@map("sensor_assignments")
+}
+
+model SensorReading {
+  id             BigInt   @id @default(autoincrement())
+  orgId          String
+  sensorId       String
+  temperature    Decimal  @db.Decimal(5, 2)
+  humidity       Decimal? @db.Decimal(5, 2)
+  recordedAt     DateTime
+  receivedAt     DateTime @default(now())
+  sequenceNumber Int
+  isSimulated    Boolean  @default(false)
+  source         String   @default("DEVICE") @db.VarChar(20)
+  createdAt      DateTime @default(now())
+
+  sensor Sensor @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+
+  @@unique([sensorId, sequenceNumber])
+  @@index([orgId, recordedAt])
+  @@index([sensorId, recordedAt])
+  @@map("sensor_readings")
+}
+
+model DeviceSimulation {
+  id          String    @id @default(cuid())
+  orgId       String
+  sensorId    String
+  scenario    String    @db.VarChar(30)
+  intervalMs  Int       @default(3000)
+  status      String    @default("RUNNING") @db.VarChar(20)
+  startedAt   DateTime  @default(now())
+  stoppedAt   DateTime?
+  lastTickAt  DateTime?
+  createdById String?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sensor       Sensor       @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([orgId, status])
+  @@map("device_simulations")
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Logistics                                                                 */
+/* -------------------------------------------------------------------------- */
+
+model Vehicle {
+  id          String  @id @default(cuid())
+  orgId       String
+  plateNumber String  @db.VarChar(30)
+  model       String? @db.VarChar(120)
+  type        String  @default("REFRIGERATED_TRUCK") @db.VarChar(40)
+  capacityKg  Int?
+  isActive    Boolean @default(true)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  shipments    Shipment[]
+
+  @@unique([orgId, plateNumber])
+  @@map("vehicles")
+}
+
+model Driver {
+  id            String  @id @default(cuid())
+  orgId         String
+  fullName      String  @db.VarChar(160)
+  licenseNumber String  @db.VarChar(60)
+  phone         String? @db.VarChar(40)
+  isActive      Boolean @default(true)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  shipments    Shipment[]
+
+  @@unique([orgId, licenseNumber])
+  @@map("drivers")
+}
+
+model Shipment {
+  id                 String    @id @default(cuid())
+  orgId              String
+  code               String    @unique @db.VarChar(40)
+  originWarehouseId  String
+  destinationName    String    @db.VarChar(160)
+  destinationCity    String?   @db.VarChar(120)
+  destinationLat     Decimal   @db.Decimal(9, 6)
+  destinationLng     Decimal   @db.Decimal(9, 6)
+  originLat          Decimal   @db.Decimal(9, 6)
+  originLng          Decimal   @db.Decimal(9, 6)
+  vehicleId          String?
+  driverId           String?
+  status             String    @default("DRAFT") @db.VarChar(20)
+  plannedDepartureAt DateTime?
+  dispatchedAt       DateTime?
+  estimatedArrivalAt DateTime?
+  deliveredAt        DateTime?
+  currentLat         Decimal?  @db.Decimal(9, 6)
+  currentLng         Decimal?  @db.Decimal(9, 6)
+  progressPercent    Int       @default(0)
+  riskScore          Int       @default(0)
+  notes              String?   @db.Text
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  organization    Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  originWarehouse Warehouse      @relation("ShipmentOrigin", fields: [originWarehouseId], references: [id])
+  vehicle         Vehicle?       @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  driver          Driver?        @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  items           ShipmentItem[]
+  events          ShipmentEvent[]
+  sensorAssignments SensorAssignment[]
+  excursions      Excursion[]
+
+  @@index([orgId, status])
+  @@index([orgId, createdAt])
+  @@map("shipments")
+}
+
+model ShipmentItem {
+  id         String @id @default(cuid())
+  shipmentId String
+  batchId    String
+  quantity   Int
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  batch    Batch    @relation(fields: [batchId], references: [id])
+
+  @@unique([shipmentId, batchId])
+  @@index([batchId])
+  @@map("shipment_items")
+}
+
+model ShipmentEvent {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  type        String   @db.VarChar(40)
+  message     String   @db.VarChar(500)
+  lat         Decimal? @db.Decimal(9, 6)
+  lng         Decimal? @db.Decimal(9, 6)
+  occurredAt  DateTime @default(now())
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  shipment  Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([shipmentId, occurredAt])
+  @@map("shipment_events")
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Monitoring & response                                                     */
+/* -------------------------------------------------------------------------- */
+
+model Excursion {
+  id             String    @id @default(cuid())
+  orgId          String
+  sensorId       String
+  storageUnitId  String?
+  shipmentId     String?
+  batchId        String?
+  type           String    @db.VarChar(30)
+  severity       String    @db.VarChar(20)
+  status         String    @default("OPEN") @db.VarChar(20)
+  startedAt      DateTime
+  endedAt        DateTime?
+  minTemp        Decimal   @db.Decimal(5, 2)
+  maxTemp        Decimal   @db.Decimal(5, 2)
+  durationSeconds Int      @default(0)
+  readingsCount  Int       @default(1)
+  peakReadingId  BigInt?
+  dedupeKey      String    @unique @db.VarChar(160)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sensor        Sensor        @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+  storageUnit   StorageUnit?  @relation(fields: [storageUnitId], references: [id], onDelete: SetNull)
+  shipment      Shipment?     @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
+  alerts        Alert[]
+  incident      Incident?
+
+  @@index([orgId, status])
+  @@index([orgId, startedAt])
+  @@index([shipmentId])
+  @@map("temperature_excursions")
+}
+
+model Alert {
+  id               String    @id @default(cuid())
+  orgId            String
+  excursionId      String?
+  type             String    @db.VarChar(40)
+  severity         String    @db.VarChar(20)
+  title            String    @db.VarChar(200)
+  message          String    @db.VarChar(600)
+  status           String    @default("OPEN") @db.VarChar(20)
+  dedupeKey        String    @unique @db.VarChar(160)
+  createdAt        DateTime  @default(now())
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+  resolvedAt       DateTime?
+
+  organization   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  excursion      Excursion?   @relation(fields: [excursionId], references: [id], onDelete: SetNull)
+  acknowledgedBy User?        @relation("AlertAcknowledger", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+  incident       Incident?
+
+  @@index([orgId, status, createdAt])
+  @@index([orgId, severity])
+  @@map("alerts")
+}
+
+model Incident {
+  id              String    @id @default(cuid())
+  orgId           String
+  code            String    @unique @db.VarChar(40)
+  alertId         String?   @unique
+  excursionId     String?   @unique
+  title           String    @db.VarChar(200)
+  description     String    @db.Text
+  severity        String    @db.VarChar(20)
+  status          String    @default("OPEN") @db.VarChar(20)
+  assigneeId      String?
+  createdById     String?
+  riskScore       Int       @default(0)
+  openedAt        DateTime  @default(now())
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  resolutionNotes String?   @db.Text
+  rootCause       String?   @db.Text
+  outcome         String?   @db.VarChar(40)
+
+  organization Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  alert        Alert?           @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  excursion    Excursion?       @relation(fields: [excursionId], references: [id], onDelete: SetNull)
+  assignee     User?            @relation("IncidentAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy    User?            @relation("IncidentCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  actions      IncidentAction[]
+
+  @@index([orgId, status, openedAt])
+  @@index([assigneeId])
+  @@map("incidents")
+}
+
+model IncidentAction {
+  id         String   @id @default(cuid())
+  incidentId String
+  actorId    String?
+  action     String   @db.VarChar(60)
+  notes      String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  actor    User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([incidentId, createdAt])
+  @@map("incident_actions")
+}
+
+model MaintenanceLog {
+  id            String   @id @default(cuid())
+  orgId         String
+  storageUnitId String
+  sensorId      String?
+  type          String   @db.VarChar(60)
+  performedAt   DateTime
+  performedBy   String   @db.VarChar(160)
+  notes         String?  @db.Text
+  status        String   @default("COMPLETED") @db.VarChar(20)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  storageUnit  StorageUnit  @relation(fields: [storageUnitId], references: [id], onDelete: Cascade)
+  sensor       Sensor?      @relation(fields: [sensorId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, performedAt])
+  @@map("maintenance_logs")
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Platform / infrastructure                                                 */
+/* -------------------------------------------------------------------------- */
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  orgId      String
+  actorId    String?
+  action     String   @db.VarChar(80)
+  entityType String   @db.VarChar(60)
+  entityId   String?  @db.VarChar(60)
+  metadata   Json?
+  ip         String?  @db.VarChar(64)
+  requestId  String?  @db.VarChar(60)
+  createdAt  DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  actor        User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt])
+  @@index([orgId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+model NotificationLog {
+  id        String    @id @default(cuid())
+  orgId     String
+  userId    String?
+  channel   String    @default("IN_APP") @db.VarChar(20)
+  subject   String    @db.VarChar(200)
+  body      String    @db.Text
+  status    String    @default("QUEUED") @db.VarChar(20)
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt])
+  @@map("notification_logs")
+}
+
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  orgId       String?
+  topic       String    @db.VarChar(80)
+  payload     Json
+  status      String    @default("PENDING") @db.VarChar(20)
+  attempts    Int       @default(0)
+  availableAt DateTime  @default(now())
+  publishedAt DateTime?
+  lastError   String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  organization Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([orgId, createdAt])
+  @@map("outbox_events")
+}
+
+model IdempotencyRecord {
+  id           String   @id @default(cuid())
+  orgId        String?
+  scope        String   @db.VarChar(60)
+  key          String   @db.VarChar(160)
+  requestHash  String   @db.VarChar(64)
+  responseCode Int?
+  responseBody Json?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  organization Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([scope, key])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}
