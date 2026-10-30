@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
@@ -11,6 +12,7 @@ import {
   KeyRound,
   Layers,
   LockKeyhole,
+  Menu,
   Package,
   Radio,
   ShieldCheck,
@@ -19,6 +21,7 @@ import {
   Thermometer,
   Truck,
   Warehouse,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Badge, Button } from "@/components/ui";
@@ -71,6 +74,7 @@ const DEMO = {
 
 export default function LandingPage() {
   const { status } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const consoleHref = status === "authenticated" ? "/app" : "/login";
   const consoleLabel = status === "authenticated" ? "Open console" : "Enter console";
 
@@ -104,7 +108,42 @@ export default function LandingPage() {
             <Link to={consoleHref}>
               <Button size="sm">{consoleLabel}<ArrowRight className="size-3.5" aria-hidden /></Button>
             </Link>
+            <button
+              type="button"
+              className="inline-flex size-10 items-center justify-center rounded-xl border border-line/70 text-mist transition-colors hover:border-cyan/40 hover:text-ice focus-visible:outline-offset-4 md:hidden"
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-primary-navigation"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+            >
+              {mobileMenuOpen ? <X className="size-4" aria-hidden /> : <Menu className="size-4" aria-hidden />}
+            </button>
           </div>
+          <nav
+            id="mobile-primary-navigation"
+            hidden={!mobileMenuOpen}
+            className="border-t border-line/60 bg-abyss/95 px-5 py-3 backdrop-blur-xl md:hidden"
+            aria-label="Mobile primary"
+          >
+            <ul className="mx-auto grid max-w-7xl gap-1 sm:grid-cols-2">
+              {[
+                ["Platform", "#platform"],
+                ["Traceability", "#traceability"],
+                ["Security", "#security"],
+                ["Database", "#evidence"],
+              ].map(([label, href]) => (
+                <li key={href}>
+                  <a
+                    href={href}
+                    className="block rounded-lg px-3 py-3 text-sm text-mist transition-colors hover:bg-white/5 hover:text-ice focus-visible:text-ice"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </header>
 
@@ -530,6 +569,7 @@ export default function LandingPage() {
               <a href="#evidence" className="hover:text-ice">Database</a>
               <Link to="/login" className="hover:text-ice">Sign in</Link>
             </nav>
+
           </div>
 
           <div className="flex flex-col gap-2 border-t border-white/5 pt-5 text-[10px] text-mist/60 sm:flex-row sm:items-center sm:justify-between">

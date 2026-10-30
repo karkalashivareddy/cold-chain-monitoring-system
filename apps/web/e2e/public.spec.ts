@@ -12,5 +12,13 @@ test("public landing page loads across viewports without browser runtime errors"
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("landing-mobile.png"), fullPage: true });
+  const menuButton = page.getByRole("button", { name: "Open navigation menu" });
+  await menuButton.click();
+  const mobileNav = page.getByRole("navigation", { name: "Mobile primary" });
+  await expect(mobileNav).toBeVisible();
+  await expect(page.getByRole("button", { name: "Close navigation menu" })).toHaveAttribute("aria-expanded", "true");
+  await mobileNav.getByRole("link", { name: "Traceability" }).click();
+  await expect(page).toHaveURL(/#traceability$/);
+  await expect(mobileNav).toBeHidden();
   expect(pageErrors).toEqual([]);
 });
