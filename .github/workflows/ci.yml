@@ -9,9 +9,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       mysql:
         image: mysql:8.4
@@ -106,5 +111,5 @@ jobs:
 
       - name: Check dependency advisories
         run: |
-          npm audit --json > npm-audit.json || true
-          node scripts/check-audit.mjs npm-audit.json
+          npm audit --json > "$RUNNER_TEMP/npm-audit.json" || true
+          node scripts/check-audit.mjs "$RUNNER_TEMP/npm-audit.json"

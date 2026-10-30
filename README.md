@@ -82,13 +82,13 @@ These points are intentionally explicit:
 
 - **No `docker-compose.yml` exists anywhere in this repository.** Docker/Compose usage is therefore not documented as a working workflow and was not runtime-verified.
 - **No Docker runtime verification was performed** for this documentation, including the MySQL 8.4 image mentioned in the Prisma schema header.
-- **No OpenAPI/Swagger document and no `/api/v1/docs` route exist**, even though `GET /api/v1` advertises `"documentation": "/api/v1/docs"`.
+- **OpenAPI 3.1 is served at `/api/v1/openapi.json`**, with a same-origin API documentation page at `/api/v1/docs`. It documents the mounted API route inventory; request/response schemas remain intentionally generic for some operations.
 - **No password-reset, change-password, email-verification or MFA flow.**
 - **No email/SMS/push delivery.** `notification_logs` rows are in-app records only.
 - **No external object storage or document upload.** CSV/PDF reports are generated on demand.
 - **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; run 41098761499 on commit 4237f09 passed the configured workflow.
 - **No external penetration test, threat-model validation or compliance audit** is evidenced.
-- **A Playwright public landing smoke test is present** and has passed in Vite dev and production preview. Authenticated end-to-end workflows remain incomplete.
+- **Playwright coverage includes the public landing page, a seeded live dashboard, and authenticated route smoke across 14 operational routes.** The route smoke does not cover every control or full business workflow.
 - **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency classification; remote run 41098761499 passed on commit 4237f09.
 - **No production deployment, reverse-proxy, TLS or backup configuration** is included.
 - The public landing page and 14 authenticated routes were exercised with Playwright; landing/dashboard screenshots were inspected at desktop and mobile sizes. Broader end-to-end business workflows and accessibility audits remain incomplete.
@@ -391,7 +391,7 @@ npm test
 
 The API test suite uses Vitest and Supertest and exercises the real HTTP surface, real Prisma queries and the real MySQL triggers/procedures.
 
-**Status: 56/56 API/MySQL tests passed** on 2026-10-30 against the dedicated `frostguard_test` schema using Vitest 4.1.12. Typecheck, lint, production build and all 3 Playwright Chromium tests passed. Coverage includes tenant isolation, injected transaction rollback, outbox/realtime authorization and the authenticated route smoke. Exact limitations and command results: `docs/audit/RELEASE_CANDIDATE_REPORT.md`.
+**Status: 66/66 API/MySQL tests passed** on 2026-10-31 against the disposable `frostguard_test` schema using Vitest 4.1.12. Typecheck, lint, production build and all 3 Playwright Chromium tests passed. Coverage includes tenant isolation, injected transaction rollback, outbox/realtime authorization, CSV export safety, mobile navigation, authenticated route smoke, and OpenAPI/docs route availability. Exact limitations and command results: `docs/audit/RELEASE_CANDIDATE_REPORT.md`.
 
 On the audit Windows host, the default `tsx` runner initially failed before Vitest startup with Node `uv_os_get_passwd returned ENOMEM`. The same `npm.cmd test` suite was then executed successfully using a temporary process-only Node preload workaround; the preload was removed afterward. This host-specific issue is documented and does not change project source or test configuration.
 
@@ -447,13 +447,12 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 ## Limitations and not-implemented work
 
 - No Docker Compose file and no verified container runtime.
-- No `/api/v1/docs` implementation despite the API root advertising it.
-- No OpenAPI schema or generated client.
+- OpenAPI schema and `/api/v1/docs` route are implemented; there is no generated API client.
 - No MFA, password reset, change-password, email verification or SSO.
 - No outbound email/SMS/push provider.
-- CI workflow includes lockfile dependency advisory classification, but has not been verified remotely. No container scanning or SAST configuration.
+- CI workflow includes lockfile dependency advisory classification. Remote run 41098761499 passed on SHA `4237f09`; current branch changes are awaiting a new remote run. No container scanning or SAST configuration.
 - No evidence of an external penetration test or formal security review.
-- Playwright public-page smoke exists; authenticated E2E and full responsive/accessibility automation remain incomplete.
+- Playwright covers landing, dashboard and 14 authenticated routes; complete business-flow E2E and full responsive/accessibility automation remain incomplete.
 - No production deployment manifests, TLS termination, secret manager, backup/restore automation or retention jobs.
 - No file/object uploads.
 - Audit logs are written transactionally and exposed read-only through the API, but the table itself is not protected against direct privileged updates by a trigger.
@@ -476,7 +475,8 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 - [Database design](docs/DATABASE.md)
 - [Security controls](docs/SECURITY.md)
 - [Threat model](docs/THREAT-MODEL.md)
-- [API reference](docs/API.md)
+- [API documentation page](http://localhost:4000/api/v1/docs) (after starting the API)
+- [OpenAPI 3.1 JSON](http://localhost:4000/api/v1/openapi.json) (after starting the API)
 - [Research notes and design rationale](docs/RESEARCH.md)
 
 ---

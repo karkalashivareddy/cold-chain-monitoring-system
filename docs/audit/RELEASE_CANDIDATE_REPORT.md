@@ -1,7 +1,7 @@
 ﻿# Release Candidate Validation Report
 
 **Date:** 2026-10-30\
-**Repository / branch:** `karkalashivareddy/cold-chain-monitoring-system`, `main`\
+**Repository / branch:** `karkalashivareddy/cold-chain-monitoring-system`, `frostguard/enterprise-completion`\
 **Starting commit:** `268e1b4`\
 **Status:** **PARTIALLY_IMPLEMENTED — not production-release ready**
 
@@ -13,18 +13,18 @@ This report records local evidence after Phase 24. Existing tracked and untracke
 |---|---|---|
 | `npm.cmd run typecheck` | PASS | Windows workspace; current source |
 | `npm.cmd run lint` | PASS | Windows workspace; current source |
-| `npm.cmd run build` | PASS | Entry 498.23 kB minified / 152.10 kB gzip; chart 409.19 kB; map 156.56 kB |
-| `npm.cmd test` | PASS, 12 files / 56 tests | MySQL on disposable `frostguard_test`; process-only `NODE_OPTIONS` preload documented and removed afterward |
+| `npm.cmd run build` | PASS | Entry 498.24 kB minified / 152.10 kB gzip; chart 409.19 kB; map 156.56 kB |
+| `npm.cmd test` | PASS, 13 files / 66 tests | MySQL on disposable `frostguard_test`; process-only `NODE_OPTIONS` preload documented and removed afterward |
 | Cross-tenant authorization tests | PASS, 5 | Two seeded organizations; foreign IDs/references, updates/deletes, search/report/audit, membership and 404 behavior |
 | Transaction rollback tests | PASS, 4 | MySQL trigger injection at required outbox insert; telemetry, dispatch, incident disposition and shipment creation |
 | Outbox/realtime tests | PASS, 6 | Concurrent claims, lease recovery, stale ack, retry, tenant and topic permission authorization; in-process worker identities |
 | Analytics regression | PASS, 1 | MySQL aggregate API response; fixed reserved SQL alias causing browser error |
-| `npm.cmd run test:e2e -w @frostguard/web -- --reporter=list` | PASS, 3 tests | Playwright Chromium: public landing responsive smoke, authenticated dashboard, 14-route app smoke/details/mobile keyboard focus; local compiled API/test DB |
+| `npm.cmd run test:e2e -w @frostguard/web` | PASS, 3 tests | Playwright Chromium: public landing responsive/menu interaction, authenticated dashboard, 14-route app smoke/details/mobile keyboard focus; local compiled API/test DB |
 | Fresh additive migration | PASS | `db:deploy` applied both migrations to new disposable `frostguard_outbox_migration_test` |
 | Prior clean schema and SQL control validation | PASS | Separate disposable `frostguard_migration_test`; four SQL controls/34 statements |
 | `npm.cmd audit --json` and `--omit=dev` | RESIDUAL | Three high findings remain on Prisma config/deepmerge-ts dependency path; assessed in `docs/security/DEPENDENCY_ADVISORY_ASSESSMENT.md` |
 | `.github/workflows/ci.yml` parser | PASS locally | Parsed with installed `js-yaml`; actionlint unavailable locally |
-| GitHub Actions remote run | PASS | Run `41098761499`, SHA `4237f09b4eaf0e34d5b1707d6f58fe4df69fad4b`; migrations/SQL, typecheck, lint, build, MySQL tests, Chromium/browser tests and dependency advisory classifier all passed |
+| GitHub Actions remote run | PASS for earlier commit only | Run `41098761499`, SHA `4237f09b4eaf0e34d5b1707d6f58fe4df69fad4b`; current branch changes are not yet pushed or remotely verified |
 | Browser screenshots | PASS, partial routes | Fresh landing/dashboard at 1366x768 and 390x844; all other pages had functional DOM smoke, not screenshot review |
 | Docker/deployment smoke | BLOCKED | Docker engine unavailable; no production hosting deployment or paid resources used |
 | `git diff --check` | PASS | No whitespace errors; line-ending conversion notices only |
@@ -55,3 +55,17 @@ This report records local evidence after Phase 24. Existing tracked and untracke
 This is a more defensible local release candidate, but **not production ready**. The local correctness and browser checks listed above pass. Remaining advisory, distributed realtime, deployment, accessibility and external security-review risks are explicit. The application is a prototype and is not production-certified or medically validated.
 
 Related evidence: [transaction rollback audit](TRANSACTION_FAILURE_AND_ROLLBACK_AUDIT.md), [cross-tenant audit](../security/CROSS_TENANT_AUTHORIZATION_AUDIT.md), [outbox audit](REALTIME_OUTBOX_RELIABILITY.md), [route audit](FULL_ROUTE_ACCESSIBILITY_VISUAL_AUDIT.md), [asset register](ASSET_LICENSE_REGISTER.md), [technical debt](TECHNICAL_DEBT.md).
+
+## Current branch validation addendum — 2026-10-31
+
+On `frostguard/enterprise-completion`, the API now serves the advertised `/api/v1/docs` page and machine-readable `/api/v1/openapi.json`. OpenAPI metadata covers the mounted API route inventory and describes device authentication for telemetry ingestion, public health checks, cookie-or-body refresh/logout, and no-body state actions. `apps/api/tests/auth.test.ts` verifies both documentation endpoints and selected security/route details.
+
+- `npm.cmd run typecheck`: PASS.
+- `npm.cmd run lint`: PASS.
+- `npm.cmd test`: PASS, 13 test files / 66 MySQL tests, using the documented temporary process preload and disposable test schema.
+- `npm.cmd run build`: PASS; entry 498.24 kB minified / 152.10 kB gzip; chart 409.19 / 115.43 kB; map 156.56 / 46.13 kB.
+- `git diff --check`: PASS.
+- Playwright and remote CI for this branch: not yet rerun/verified at this addendum's creation.
+- Dependency advisories: three high findings remain on the Prisma config / `deepmerge-ts` path. The CI audit-check message was clarified to avoid implying optional peer paths are proven absent from production-omission installs.
+
+Release remains **PARTIALLY_IMPLEMENTED**; this is local verification evidence, not production verification.

@@ -26,7 +26,7 @@ for (const [name, vulnerability] of Object.entries(report.vulnerabilities)) {
   });
 
   if (toolingOnly) {
-    console.warn(`High-severity advisory is limited to development/optional tooling: ${name}`);
+    console.warn(`High-severity advisory resolves only to lockfile entries marked dev/devOptional: ${name}. Review the separate --omit=dev audit before classifying runtime exposure.`);
   } else {
     blocking.push(`${name} (${vulnerability.severity})`);
   }
@@ -35,4 +35,4 @@ for (const [name, vulnerability] of Object.entries(report.vulnerabilities)) {
 if (blocking.length > 0) {
   throw new Error(`High/critical runtime dependency advisories: ${blocking.join(", ")}`);
 }
-console.log("No high/critical advisories affect runtime dependency entries.");
+console.log("No high/critical advisories resolve to non-dev lockfile entries. Any devOptional findings remain reported above and require separate production-omission review.");

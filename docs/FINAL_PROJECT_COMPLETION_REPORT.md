@@ -92,8 +92,8 @@ Argon2 password hashing; JWT access/refresh flow; membership/RBAC; Zod input val
 | --- | --- |
 | `npm.cmd run typecheck` | **VERIFIED** — passed |
 | `npm.cmd run lint` | **VERIFIED** — passed after adding flat config and removing unused items |
-| `npm.cmd run build` | **VERIFIED** — passed; entry 498.23 kB minified / 152.10 kB gzip, chart 409.19 kB, map 156.56 kB |
-| `npm.cmd test` | **VERIFIED** — 12 files / 56 tests passed against disposable `frostguard_test` only |
+| `npm.cmd run build` | **VERIFIED** — passed; entry 498.24 kB minified / 152.10 kB gzip, chart 409.19 kB, map 156.56 kB |
+| `npm.cmd test` | **VERIFIED** — 13 files / 66 tests passed against disposable `frostguard_test` only |
 | Playwright Chromium suite | **VERIFIED** — 3 tests passed: landing, authenticated dashboard and 14-route smoke |
 | Authenticated dashboard and route smoke | **VERIFIED** — compiled API on `frostguard_test`; route heading/landmark traversal, detail/empty state and mobile keyboard focus passed |
 | Full accessibility / every-route visual audit | **PARTIALLY_IMPLEMENTED** — no axe/WCAG, screen reader, all route screenshots or all requested viewports |
@@ -102,7 +102,7 @@ Argon2 password hashing; JWT access/refresh flow; membership/RBAC; Zod input val
 
 ## 14. Performance measurements
 
-Current build artifact sizes: entry JS 498.23 kB minified / 152.10 kB gzip; charts 409.19 / 115.44 kB; route map 156.56 / 46.13 kB; CSS 74.02 / 16.61 kB. The prior reported entry was 903.52 / 223.88 kB; this comparison is not a controlled benchmark. No Core Web Vitals, API latency or DB latency claims. See [performance audit](FINAL_PERFORMANCE_AUDIT.md).
+Current build artifact sizes: entry JS 498.24 kB minified / 152.10 kB gzip; charts 409.19 / 115.43 kB; route map 156.56 / 46.13 kB; CSS 74.35 / 16.66 kB. The prior reported entry was 903.52 / 223.88 kB; this comparison is not a controlled benchmark. No Core Web Vitals, API latency or DB latency claims. See [performance audit](FINAL_PERFORMANCE_AUDIT.md).
 
 ## 15. Claude review status
 
@@ -147,7 +147,7 @@ No deployment performed or verified. Docker engine was unavailable; repository h
 This addendum supersedes earlier 40-test, selected-route, and outbox/security status statements above.
 
 - **Repository:** `main`, starting HEAD `268e1b4`, final pushed HEAD `4237f09`; existing untracked files preserved. The five phase commits are listed in section 17 and remote run `41098761499` passed.
-- **Newly verified:** Cross-tenant regression (5 tests), injected transaction rollback (4 tests), outbox/realtime (6 tests), analytics aggregate regression (1 test), full API/MySQL suite (**12 files / 56 tests passed**), and full Playwright Chromium suite (**3 tests passed**). Typecheck, ESLint, and production build passed.
+- **Newly verified:** Cross-tenant regression (5 tests), injected transaction rollback (4 tests), outbox/realtime (6 tests), analytics aggregate regression (1 test), CSV export safety (9 tests), full API/MySQL suite (**13 files / 65 tests passed**), and full Playwright Chromium suite (**3 tests passed**, including mobile navigation disclosure and 14-route smoke). Typecheck, ESLint, and production build passed after integration.
 - **Analytics defect:** Browser route traversal found a MySQL SQL syntax failure caused by the alias `delayed`; renamed it to `delayedCount`, added a MySQL API regression, and the complete authenticated route smoke passed afterward.
 - **Outbox/realtime:** Atomic MySQL leases and token-fenced acknowledgements, bounded retries, topic permission rooms, periodic permission revalidation and reconnect query invalidation are implemented. Delivery is at-least-once. Cross-process Socket.IO fanout, independent OS-worker crash tests and replay tooling remain incomplete.
 - **Transaction evidence:** Trigger-injected required-outbox failures roll back telemetry, shipment dispatch, incident resolution and shipment creation. Cancellation/release and actual commit/network acknowledgement uncertainty remain untested.
@@ -158,3 +158,17 @@ This addendum supersedes earlier 40-test, selected-route, and outbox/security st
 - **Independent review:** Internal read-only review findings IR-01/02 and rollback items are dispositioned; IR-03 cross-process fanout and other listed limitations remain. Claude/external review remains blocked and is not claimed.
 
 Current exact results and blocker list are in [release candidate report](audit/RELEASE_CANDIDATE_REPORT.md), [transaction audit](audit/TRANSACTION_FAILURE_AND_ROLLBACK_AUDIT.md), [outbox audit](audit/REALTIME_OUTBOX_RELIABILITY.md), [cross-tenant audit](security/CROSS_TENANT_AUTHORIZATION_AUDIT.md), and [route audit](audit/FULL_ROUTE_ACCESSIBILITY_VISUAL_AUDIT.md). Overall status remains **PARTIALLY_IMPLEMENTED** and not production-ready.
+
+## Current branch addendum — 2026-10-31
+
+Current work is on `frostguard/enterprise-completion`, based on pushed `main` commit `7d55f0a`. This branch is not yet committed or pushed. It preserves pre-existing untracked JPEGs and older screenshot files by excluding them from changes.
+
+- Added the advertised API docs page (`GET /api/v1/docs`) and OpenAPI JSON (`GET /api/v1/openapi.json`), with auth/route metadata regression coverage.
+- Added report CSV formula-injection and download-filename sanitization with nine focused tests.
+- Improved public landing mobile navigation with an accessible disclosure and E2E interaction coverage.
+- Local current-branch verification: typecheck PASS; ESLint PASS; production build PASS; MySQL tests PASS (13 files / 66 tests); Playwright PASS (3 tests). Build entry 498.24 kB minified / 152.10 kB gzip.
+- Added four new landing/dashboard screenshots from the actual app at desktop and mobile sizes. Existing four untracked screenshots at the older path remain untouched and excluded.
+- `scripts/check-audit.mjs` output now states that dev/devOptional lock entries require separate production-omission review. Three high Prisma/deepmerge-ts advisory findings remain unresolved and must not be considered closed.
+- Current branch CI, GitHub push, PR, and remote verification are pending. No production deployment, independent external security review, penetration test, or WCAG conformance claim is made.
+
+Current overall status remains **PARTIALLY_IMPLEMENTED**; see `docs/audit/RELEASE_CANDIDATE_REPORT.md` for command evidence and blockers.

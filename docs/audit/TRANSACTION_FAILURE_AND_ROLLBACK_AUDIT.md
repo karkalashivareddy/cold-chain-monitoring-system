@@ -36,4 +36,4 @@ From repository root, use the documented process-only `NODE_OPTIONS` wrapper in 
 npm.cmd test
 ```
 
-The latest full run completed **12 files / 56 tests passed**. The final release report records the timestamp and host limitation. No production data or database was used.
+The prior Phase 24 run completed 12 files / 56 tests. The latest regression run after CSV-safety, responsive navigation, and API documentation changes completed **13 files / 66 tests passed**; the four rollback cases remain part of that suite. The release report records the Windows host limitation. No production data or database was used.

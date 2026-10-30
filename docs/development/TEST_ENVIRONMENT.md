@@ -1,7 +1,17 @@
 # Test Environment
 
 **Evidence date:** 2026-10-30\
-**Status:** **PARTIALLY_IMPLEMENTED** — the full 56-test suite passed, but this Windows host requires a process-scoped workaround; WSL and Docker alternatives were unavailable here.
+**Status:** **PARTIALLY_IMPLEMENTED** — the latest 66-test suite passed, but this Windows host requires a process-scoped workaround; WSL and Docker alternatives were unavailable here.
+
+## Execution host and services
+
+This work ran in the configured Windows workspace at `C:\Users\karka\cold-chain-monitoring-system`; it was **not verified as Codex Cloud execution**. The host reports Windows 10.0.26300, Node.js v24.19.0, npm 11.17.0, 12 logical processors, 15.7 GiB RAM (3.0 GiB free at the check), and 137.9 GiB free on C:. WMI hardware inventory was denied by the host policy; CPU and memory figures came from Node's OS APIs.
+
+- GitHub CLI was authenticated as `karkalashivareddy` with `repo` and `workflow` scopes; fetch from `origin` succeeded. No token value was read or written to documentation.
+- MySQL accepted TCP connections on localhost:3306 and the real-MySQL suite passed on the dedicated disposable `frostguard_test` schema. The MySQL CLI itself is not installed/discoverable.
+- Java 25 and the Docker CLI are present. Docker Engine is unavailable (Docker named pipe missing); no Redis CLI or local Redis service is available.
+- Direct TCP probing of `registry.npmjs.org:443` failed in this environment; GitHub fetch and previously executed npm audit requests succeeded through the configured tooling/network path. Do not treat direct shell networking as generally available.
+- No paid services were used, no production deployment was attempted, and secret values were not displayed.
 
 ## Current baseline
 
@@ -80,4 +90,4 @@ This Windows host has `wsl.exe`, but `wsl.exe --status` returned `Wsl/EnumerateD
 
 ## Test evidence
 
-The full suite passed **12 files / 56 tests** on 2026-10-30 against `frostguard_test` using the temporary preload above. The full Playwright suite passed **3 tests** including the 14-route authenticated smoke; typecheck, lint, and production build also passed. The workaround was removed after execution. No temporary shim exists in the repository.
+The full suite passed **13 files / 66 tests** on 2026-10-31 against `frostguard_test` using the temporary preload above. The full Playwright suite passed **3 tests** including the 14-route authenticated smoke and mobile-navigation interaction; typecheck, lint, and production build also passed. The workaround was removed after execution. No temporary shim exists in the repository.

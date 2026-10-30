@@ -40,13 +40,24 @@ The repository currently uses Prisma 6.19.3, `prisma-client-js`, generated `@pri
 
 The Prisma 7 migration was not attempted. An ORM major migration solely to address one transitive advisory is not justified without a full branch-level compatibility exercise, disposable MySQL migration, generated-client review, and all integration tests. Prisma 8 is documented by Prisma as a release candidate in the current documentation and is not an appropriate shortcut for this release gate.
 
+## Isolated remediation attempt
+
+An isolated `git archive` copy of commit `7d55f0a` was used for a dependency override experiment. No repository source, lockfile, or database was changed by the experiment.
+
+- Added a root npm override for `deepmerge-ts@8.0.0` and ran `npm install --package-lock-only --ignore-scripts --no-audit`. npm still resolved `@prisma/config@6.19.3 -> deepmerge-ts@7.1.5`; the override did not apply.
+- A clean `npm ci --no-audit` succeeded in the temp copy (547 packages; install scripts disabled), but the lockfile remained on the vulnerable chain and the audit continued to report three high findings.
+- `prisma validate` and `npm run db:generate` could not complete because the Prisma Windows schema-engine checksum download from `binaries.prisma.sh` failed in that isolated environment. No schema migration or database test ran.
+- The upstream [deepmerge-ts 8.0.0 release notes](https://github.com/RebeccaStevens/deepmerge-ts/releases/tag/v8.0.0) list circular-reference support and the advisory fix, while also documenting behavior changes. API-shape similarity alone is not sufficient evidence to override Prisma's exact 7.1.5 dependency.
+
+**Disposition:** Do not adopt the override or claim remediation. The high advisory remains open. A supported Prisma release update or a tested nested override requires a working schema-engine download plus validation, client generation, disposable MySQL migration, and full integration/build regression.
+
 ## Defensible interim mitigation
 
 - Keep the current Prisma config/schema and migrations repository-controlled; do not merge untrusted `prisma.config.*` or schema files into developer/CI jobs.
 - Keep Prisma CLI usage in trusted developer/CI workflows and do not expose CLI config-loading functionality to end users.
 - Build a clean production dependency tree (`npm ci --omit=dev`) in a network-enabled isolated job and run `npm audit --omit=dev --json`; record whether optional peer resolution retains this path.
 - Re-run full lockfile `npm audit --json`, and inspect every advisory path; do not rely on a package-name classifier alone.
-- Evaluate a narrow npm `overrides` entry for `deepmerge-ts@^8` in a temporary branch only. Validate Prisma config load, `prisma validate`, `prisma generate`, fresh MySQL migration, API integration tests, typecheck, and production build before adopting it.
+- If retrying overrides, use an isolated temporary copy and target the precise `@prisma/config` dependency path. Validate Prisma config load, `prisma validate`, `prisma generate`, fresh MySQL migration, API integration tests, typecheck, production build, and the final dependency tree before adopting it. The first root-level override attempt did not apply.
 - If an upstream Prisma release updates its exact `deepmerge-ts` pin, prefer that supported update and remove any temporary override.
 
 ## Reproduction and follow-up

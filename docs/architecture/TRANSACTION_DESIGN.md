@@ -14,6 +14,6 @@ Outbox publication happens after commit. MySQL workers now claim rows using `FOR
 
 ## Verification status
 
-The latest API/MySQL suite passes 56 tests across 12 files. Telemetry ordering, tenant references, shipment contention, concurrent incident resolution, outbox lease recovery, stale acknowledgements and topic permissions have regression tests. Four injected outbox insert failures verify rollback of telemetry, dispatch stock/state, incident disposition and shipment creation. Fresh additive migration passed on a dedicated disposable schema. Cancellation/release rollback, commit acknowledgement uncertainty, and true separate-process worker crash recovery remain unverified.
+The latest API/MySQL suite passes 66 tests across 13 files. Telemetry ordering, tenant references, shipment contention, concurrent incident resolution, outbox lease recovery, stale acknowledgements and topic permissions have regression tests. Four injected outbox insert failures verify rollback of telemetry, dispatch stock/state, incident disposition and shipment creation. OpenAPI/docs route tests verify the documentation endpoint is served and selected security/route metadata is accurate. Fresh additive migration passed on a dedicated disposable schema. Cancellation/release rollback, commit acknowledgement uncertainty, and true separate-process worker crash recovery remain unverified.
 
 See docs/database/TRANSACTION_DESIGN.md for actual steps, isolation details and remaining test procedures.
