@@ -119,32 +119,32 @@ export default function LandingPage() {
               {mobileMenuOpen ? <X className="size-4" aria-hidden /> : <Menu className="size-4" aria-hidden />}
             </button>
           </div>
-          <nav
-            id="mobile-primary-navigation"
-            hidden={!mobileMenuOpen}
-            className="border-t border-line/60 bg-abyss/95 px-5 py-3 backdrop-blur-xl md:hidden"
-            aria-label="Mobile primary"
-          >
-            <ul className="mx-auto grid max-w-7xl gap-1 sm:grid-cols-2">
-              {[
-                ["Platform", "#platform"],
-                ["Traceability", "#traceability"],
-                ["Security", "#security"],
-                ["Database", "#evidence"],
-              ].map(([label, href]) => (
-                <li key={href}>
-                  <a
-                    href={href}
-                    className="block rounded-lg px-3 py-3 text-sm text-mist transition-colors hover:bg-white/5 hover:text-ice focus-visible:text-ice"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
         </div>
+        <nav
+          id="mobile-primary-navigation"
+          hidden={!mobileMenuOpen}
+          className="border-t border-line/60 bg-abyss/95 px-5 py-3 backdrop-blur-xl md:hidden"
+          aria-label="Mobile primary"
+        >
+          <ul className="mx-auto grid max-w-7xl gap-1 sm:grid-cols-2">
+            {[
+              ["Platform", "#platform"],
+              ["Traceability", "#traceability"],
+              ["Security", "#security"],
+              ["Database", "#evidence"],
+            ].map(([label, href]) => (
+              <li key={href}>
+                <a
+                  href={href}
+                  className="block rounded-lg px-3 py-3 text-sm text-mist transition-colors hover:bg-white/5 hover:text-ice focus-visible:text-ice"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </header>
 
       <main id="main">
