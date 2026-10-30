@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import crypto from "node:crypto";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { env } from "../src/config/env";
@@ -669,7 +668,7 @@ async function main() {
     },
   });
 
-  const alert1 = await prisma.alert.create({
+  await prisma.alert.create({
     data: {
       orgId: orgA.id, excursionId: excursion1.id, type: "TEMPERATURE_EXCURSION", severity: "WARNING",
       title: "Temperature excursion on Reefer Van TN-09 · Sensor",

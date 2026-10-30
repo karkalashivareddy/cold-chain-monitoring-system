@@ -10,7 +10,8 @@ export default defineConfig({
     hookTimeout: 180_000,
     sequence: { concurrent: false },
     pool: "forks",
-    poolOptions: { forks: { singleFork: true } },
+    maxWorkers: 1,
+    isolate: false,
     env: {
       NODE_ENV: "test",
       API_PORT: "4100",

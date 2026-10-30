@@ -8,6 +8,13 @@ let northlineOperator: LoginResult;
 let northlineAuditor: LoginResult;
 let meridianOwner: LoginResult;
 let northlineShipmentId: string;
+let northlineProductId: string;
+let northlineBatchId: string;
+let meridianProfileId: string;
+let northlineProfileId: string;
+let northlineStorageUnitId: string;
+let northlineSensorId: string;
+let meridianSensorId: string;
 
 beforeAll(async () => {
   [northlineOwner, northlineViewer, northlineOperator, northlineAuditor, meridianOwner] = await Promise.all([
@@ -20,6 +27,24 @@ beforeAll(async () => {
 
   const shipments = await request(app).get("/api/v1/shipments").set(bearer(northlineOwner.token));
   northlineShipmentId = shipments.body.data[0].id as string;
+
+  const { prisma } = await import("../src/lib/prisma");
+  const [product, batch, profile, ownProfile, northlineStorageUnit, northlineSensor, meridianSensor] = await Promise.all([
+    prisma.product.findFirstOrThrow({ where: { orgId: northlineOwner.user.organization.id } }),
+    prisma.batch.findFirstOrThrow({ where: { orgId: northlineOwner.user.organization.id } }),
+    prisma.temperatureProfile.findFirstOrThrow({ where: { orgId: meridianOwner.user.organization.id } }),
+    prisma.temperatureProfile.findFirstOrThrow({ where: { orgId: northlineOwner.user.organization.id } }),
+    prisma.storageUnit.findFirstOrThrow({ where: { orgId: northlineOwner.user.organization.id } }),
+    prisma.sensor.findFirstOrThrow({ where: { orgId: northlineOwner.user.organization.id } }),
+    prisma.sensor.findFirstOrThrow({ where: { orgId: meridianOwner.user.organization.id } }),
+  ]);
+  northlineProductId = product.id;
+  northlineBatchId = batch.id;
+  meridianProfileId = profile.id;
+  northlineProfileId = ownProfile.id;
+  northlineStorageUnitId = northlineStorageUnit.id;
+  northlineSensorId = northlineSensor.id;
+  meridianSensorId = meridianSensor.id;
 });
 
 describe("organization isolation", () => {
@@ -68,6 +93,111 @@ describe("organization isolation", () => {
     expect(northline.body.data.sensorByStatus.ONLINE).toBeGreaterThan(
       meridian.body.data.sensorByStatus.ONLINE ?? 0
     );
+  });
+
+  it("rejects another organization's temperature profile on product create and update", async () => {
+    const { prisma } = await import("../src/lib/prisma");
+    const create = await request(app)
+      .post("/api/v1/products")
+      .set(bearer(northlineOwner.token))
+      .send({
+        code: "CROSS-ORG-PROFILE",
+        name: "Cross organization profile test",
+        category: "Test",
+        storageType: "FRIDGE",
+        minTemp: 2,
+        maxTemp: 8,
+        isActive: true,
+        temperatureProfileId: meridianProfileId,
+      });
+
+    expect(create.status).toBe(400);
+    expect(
+      await prisma.product.findFirst({ where: { orgId: northlineOwner.user.organization.id, code: "CROSS-ORG-PROFILE" } })
+    ).toBeNull();
+
+    const before = await prisma.product.findUniqueOrThrow({ where: { id: northlineProductId } });
+    const update = await request(app)
+      .patch("/api/v1/products/" + northlineProductId)
+      .set(bearer(northlineOwner.token))
+      .send({ temperatureProfileId: meridianProfileId });
+
+    expect(update.status).toBe(400);
+    expect((await prisma.product.findUniqueOrThrow({ where: { id: northlineProductId } })).temperatureProfileId).toBe(
+      before.temperatureProfileId
+    );
+
+    const sameOrgUpdate = await request(app)
+      .patch("/api/v1/products/" + northlineProductId)
+      .set(bearer(northlineOwner.token))
+      .send({ temperatureProfileId: northlineProfileId });
+    expect(sameOrgUpdate.status).toBe(200);
+    expect(sameOrgUpdate.body.data.temperatureProfileId).toBe(northlineProfileId);
+  });
+
+  it("rejects another organization's temperature profile on batch create and update", async () => {
+    const { prisma } = await import("../src/lib/prisma");
+    const create = await request(app)
+      .post("/api/v1/batches")
+      .set(bearer(northlineOwner.token))
+      .send({
+        productId: northlineProductId,
+        batchNumber: "CROSS-ORG-PROFILE",
+        manufacturedAt: "2026-01-01T00:00:00.000Z",
+        expiresAt: "2027-01-01T00:00:00.000Z",
+        quantity: 10,
+        status: "QUARANTINE",
+        temperatureProfileId: meridianProfileId,
+      });
+
+    expect(create.status).toBe(400);
+    expect(
+      await prisma.batch.findFirst({
+        where: { orgId: northlineOwner.user.organization.id, batchNumber: "CROSS-ORG-PROFILE" },
+      })
+    ).toBeNull();
+
+    const before = await prisma.batch.findUniqueOrThrow({ where: { id: northlineBatchId } });
+    const update = await request(app)
+      .patch("/api/v1/batches/" + northlineBatchId)
+      .set(bearer(northlineOwner.token))
+      .send({ temperatureProfileId: meridianProfileId });
+
+    expect(update.status).toBe(400);
+    expect((await prisma.batch.findUniqueOrThrow({ where: { id: northlineBatchId } })).temperatureProfileId).toBe(
+      before.temperatureProfileId
+    );
+
+    const sameOrgUpdate = await request(app)
+      .patch("/api/v1/batches/" + northlineBatchId)
+      .set(bearer(northlineOwner.token))
+      .send({ temperatureProfileId: northlineProfileId });
+    expect(sameOrgUpdate.status).toBe(200);
+    expect(sameOrgUpdate.body.data.temperatureProfileId).toBe(northlineProfileId);
+  });
+
+  it("rejects another organization's sensor on a storage-unit maintenance record", async () => {
+    const { prisma } = await import("../src/lib/prisma");
+    const before = await prisma.maintenanceLog.count({
+      where: { orgId: northlineOwner.user.organization.id, storageUnitId: northlineStorageUnitId },
+    });
+    const crossOrg = await request(app)
+      .post(`/api/v1/storage-units/${northlineStorageUnitId}/maintenance`)
+      .set(bearer(northlineOwner.token))
+      .send({ type: "CALIBRATION", performedBy: "Tenant test", sensorId: meridianSensorId });
+
+    expect(crossOrg.status).toBe(400);
+    expect(
+      await prisma.maintenanceLog.count({
+        where: { orgId: northlineOwner.user.organization.id, storageUnitId: northlineStorageUnitId },
+      })
+    ).toBe(before);
+
+    const sameOrg = await request(app)
+      .post(`/api/v1/storage-units/${northlineStorageUnitId}/maintenance`)
+      .set(bearer(northlineOwner.token))
+      .send({ type: "CALIBRATION", performedBy: "Tenant test", sensorId: northlineSensorId });
+    expect(sameOrg.status).toBe(201);
   });
 });
 

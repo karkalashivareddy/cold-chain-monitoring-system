@@ -656,6 +656,8 @@ model OutboxEvent {
   status      String    @default("PENDING") @db.VarChar(20)
   attempts    Int       @default(0)
   availableAt DateTime  @default(now())
+  claimToken  String?   @db.VarChar(36)
+  claimedUntil DateTime?
   publishedAt DateTime?
   lastError   String?   @db.Text
   createdAt   DateTime  @default(now())
@@ -663,6 +665,7 @@ model OutboxEvent {
   organization Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@index([status, availableAt])
+  @@index([status, claimedUntil])
   @@index([orgId, createdAt])
   @@map("outbox_events")
 }

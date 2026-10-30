@@ -14,7 +14,10 @@ export async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<
       lastError = err;
       const retryable =
         err instanceof Prisma.PrismaClientKnownRequestError &&
-        (err.code === "P2034" || err.code === "P2028");
+        (err.code === "P2034" ||
+          err.code === "P2028" ||
+          (err.code === "P2010" &&
+            (String(err.meta?.code) === "1213" || String(err.meta?.message).includes("Deadlock found"))));
       if (!retryable || i === attempts - 1) throw err;
       await new Promise((r) => setTimeout(r, 40 * (i + 1) + Math.random() * 40));
     }

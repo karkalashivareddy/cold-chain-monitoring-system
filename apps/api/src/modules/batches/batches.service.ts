@@ -100,6 +100,14 @@ export async function createBatch(orgId: string, actorId: string, input: BatchIn
   const profileId = input.temperatureProfileId ?? product.temperatureProfileId ?? null;
 
   return prisma.$transaction(async (tx) => {
+    if (profileId) {
+      const profile = await tx.temperatureProfile.findFirst({
+        where: { id: profileId, orgId },
+        select: { id: true },
+      });
+      if (!profile) throw AppError.badRequest("Temperature profile not found in this organization");
+    }
+
     const batch = await tx.batch.create({
       data: {
         orgId,
@@ -152,6 +160,14 @@ export async function updateBatch(
   }
 
   return prisma.$transaction(async (tx) => {
+    if (input.temperatureProfileId) {
+      const profile = await tx.temperatureProfile.findFirst({
+        where: { id: input.temperatureProfileId, orgId },
+        select: { id: true },
+      });
+      if (!profile) throw AppError.badRequest("Temperature profile not found in this organization");
+    }
+
     const updated = await tx.batch.update({
       where: { id },
       data: {

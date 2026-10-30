@@ -45,16 +45,21 @@ describe("incident lifecycle state machine", () => {
     expect(investigating.status).toBe(200);
     expect(investigating.body.data.status).toBe("INVESTIGATING");
 
-    const resolved = await request(app)
-      .post(`/api/v1/incidents/${incidentId}/resolve`)
-      .set(bearer(token))
-      .send({
-        resolutionNotes:
-          "Reefer unit serviced, temperature restored to 4.8 °C across four consecutive readings. Batch released after quality review.",
-        outcome: "PRODUCT_SAFE",
-        rootCause: "Refrigeration compressor short cycling",
-      });
-    expect(resolved.status).toBe(200);
+    const resolveInput = {
+      resolutionNotes: "Refrigeration equipment serviced and monitored. Batch disposition reviewed by quality staff.",
+      outcome: "PRODUCT_SAFE",
+      rootCause: "Refrigeration compressor short cycling",
+    };
+    const resolutions = await Promise.all(
+      [0, 1].map(() =>
+        request(app)
+          .post(`/api/v1/incidents/${incidentId}/resolve`)
+          .set(bearer(token))
+          .send(resolveInput)
+      )
+    );
+    expect(resolutions.map((response) => response.status).sort()).toEqual([200, 409]);
+    const resolved = resolutions.find((response) => response.status === 200)!;
     expect(resolved.body.data.status).toBe("RESOLVED");
     expect(resolved.body.data.outcome).toBe("PRODUCT_SAFE");
     expect(resolved.body.data.resolvedAt).toBeTruthy();
@@ -68,6 +73,7 @@ describe("incident lifecycle state machine", () => {
     expect(persisted.actions.map((a) => a.action)).toEqual(
       expect.arrayContaining(["ACKNOWLEDGED", "INVESTIGATION_STARTED", "RESOLVED"])
     );
+    expect(persisted.actions.filter((action) => action.action === "RESOLVED")).toHaveLength(1);
   });
 
   it("records every transition in the audit trail", async () => {

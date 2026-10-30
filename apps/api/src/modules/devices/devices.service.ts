@@ -88,6 +88,13 @@ async function assign(
   sensorId: string,
   target: { storageUnitId?: string | null; shipmentId?: string | null }
 ) {
+  const lockedSensor = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+    "SELECT id FROM sensors WHERE id = ? AND orgId = ? FOR UPDATE",
+    sensorId,
+    orgId
+  );
+  if (lockedSensor.length === 0) throw AppError.notFound("Device not found");
+
   if (target.storageUnitId) {
     const unit = await tx.storageUnit.findFirst({ where: { id: target.storageUnitId, orgId } });
     if (!unit) throw AppError.badRequest("Storage unit not found in this organization");

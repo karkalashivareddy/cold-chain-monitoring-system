@@ -15,6 +15,7 @@ export type IngestOptions = {
 
 export type IngestResult = {
   duplicate: boolean;
+  outOfOrder?: boolean;
   readingId?: string;
   evaluation?: ReturnType<typeof evaluateTemperature>;
   excursionId?: string | null;
@@ -29,7 +30,6 @@ const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export async function ingestReading(input: TelemetryReadingInput, opts: IngestOptions): Promise<IngestResult> {
   const sensor = await prisma.sensor.findUnique({
     where: { deviceId: input.deviceId.toUpperCase() },
-    include: { assignments: { where: { endedAt: null }, orderBy: { startedAt: "desc" }, take: 1 } },
   });
 
   // Uniform failure: never reveal whether a device id exists.
@@ -52,15 +52,45 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
     throw AppError.badRequest("Recorded timestamp is older than the accepted retention window");
   }
 
-  const assignment = sensor.assignments[0] ?? null;
-  const target = {
-    storageUnitId: assignment?.storageUnitId ?? null,
-    shipmentId: assignment?.shipmentId ?? null,
-  };
-
   try {
     return await prisma.$transaction(
       async (tx) => {
+        // Serialize ingestion for one sensor before looking at its latest
+        // sequence. Delayed readings remain in immutable history but cannot
+        // regress current excursion state.
+        const lockedSensor = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+          "SELECT id FROM sensors WHERE id = ? FOR UPDATE",
+          sensor.id
+        );
+        if (lockedSensor.length === 0) {
+          throw new AppError(401, "DEVICE_AUTH_FAILED", "Device authentication failed");
+        }
+        const currentSensor = await tx.sensor.findUnique({ where: { id: sensor.id } });
+        if (
+          !currentSensor ||
+          currentSensor.status === "REVOKED" ||
+          (!opts.internal &&
+            (!opts.deviceKey || !verifyDeviceKey(currentSensor.apiKeyHash, opts.deviceKey)))
+        ) {
+          throw new AppError(401, "DEVICE_AUTH_FAILED", "Device authentication failed");
+        }
+        const assignment = await tx.sensorAssignment.findFirst({
+          where: { sensorId: sensor.id, endedAt: null },
+          orderBy: { startedAt: "desc" },
+          select: { storageUnitId: true, shipmentId: true },
+        });
+        const target = {
+          storageUnitId: assignment?.storageUnitId ?? null,
+          shipmentId: assignment?.shipmentId ?? null,
+        };
+        const latestReading = await tx.sensorReading.findFirst({
+          where: { sensorId: sensor.id },
+          orderBy: { sequenceNumber: "desc" },
+          select: { sequenceNumber: true },
+        });
+        const outOfOrder =
+          latestReading !== null && input.sequenceNumber < latestReading.sequenceNumber;
+
         const reading = await tx.sensorReading.create({
           data: {
             orgId: sensor.orgId,
@@ -69,7 +99,8 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
             humidity: input.humidity != null ? new Prisma.Decimal(input.humidity.toFixed(2)) : null,
             recordedAt,
             sequenceNumber: input.sequenceNumber,
-            isSimulated: Boolean(input.isSimulated),
+            // Only trusted internal simulator calls can mark synthetic data.
+            isSimulated: Boolean(opts.internal),
             source: opts.internal ? "SIMULATOR" : "DEVICE",
           },
         });
@@ -78,7 +109,7 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
           where: { id: sensor.id },
           data: {
             lastSeenAt: new Date(),
-            status: sensor.status === "MAINTENANCE" ? "MAINTENANCE" : "ONLINE",
+            status: currentSensor.status === "MAINTENANCE" ? "MAINTENANCE" : "ONLINE",
           },
         });
 
@@ -98,7 +129,7 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
         let alertId: string | null = null;
         let incidentId: string | null = null;
 
-        if (evaluation.isOutOfRange && profile) {
+        if (!outOfOrder && evaluation.isOutOfRange && profile) {
           if (openExcursion) {
             const min = Math.min(Number(openExcursion.minTemp), input.temperature);
             const max = Math.max(Number(openExcursion.maxTemp), input.temperature);
@@ -240,7 +271,7 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
               });
             }
           }
-        } else if (openExcursion && !evaluation.isOutOfRange) {
+        } else if (!outOfOrder && openExcursion && !evaluation.isOutOfRange) {
           // Recovery: close the excursion, resolve its open alerts.
           const endedAt = new Date();
           await tx.excursion.update({
@@ -271,8 +302,9 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
               temperature: input.temperature,
               humidity: input.humidity ?? null,
               recordedAt: recordedAt.toISOString(),
-              state: evaluation.state,
-              isSimulated: Boolean(input.isSimulated),
+              state: outOfOrder ? "STALE" : evaluation.state,
+              isSimulated: Boolean(opts.internal),
+              outOfOrder,
               shipmentId: target.shipmentId,
               storageUnitId: target.storageUnitId,
             },
@@ -281,12 +313,15 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
 
         return {
           duplicate: false,
+          outOfOrder,
           readingId: reading.id.toString(),
           evaluation,
           excursionId,
           alertId,
           incidentId,
-          message: evaluation.isOutOfRange
+          message: outOfOrder
+            ? "Delayed reading stored as historical telemetry; live excursion state was not changed."
+            : evaluation.isOutOfRange
             ? `Reading stored; ${evaluation.state.toLowerCase()} excursion state.`
             : "Reading stored within permitted range.",
         };

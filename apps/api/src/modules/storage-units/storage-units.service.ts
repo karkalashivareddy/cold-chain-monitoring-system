@@ -142,6 +142,14 @@ export async function addMaintenanceLog(
   if (!unit) throw AppError.notFound("Storage unit not found");
 
   return prisma.$transaction(async (tx) => {
+    if (input.sensorId) {
+      const sensor = await tx.sensor.findFirst({
+        where: { id: input.sensorId, orgId },
+        select: { id: true },
+      });
+      if (!sensor) throw AppError.badRequest("Sensor not found in this organization");
+    }
+
     const log = await tx.maintenanceLog.create({
       data: {
         orgId,

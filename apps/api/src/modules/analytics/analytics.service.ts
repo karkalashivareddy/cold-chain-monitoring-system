@@ -159,12 +159,12 @@ export async function getExpiringBatches(orgId: string, days = 30) {
 export async function getDeliveryPerformance(orgId: string) {
   const from = new Date(Date.now() - 180 * DAY);
   const rows = await prisma.$queryRaw<
-    Array<{ month: string; delivered: bigint; onTime: bigint; delayed: bigint }>
+    Array<{ month: string; delivered: bigint; onTime: bigint; delayedCount: bigint }>
   >(Prisma.sql`
     SELECT DATE_FORMAT(COALESCE(deliveredAt, createdAt), '%Y-%m') AS month,
            SUM(status = 'DELIVERED') AS delivered,
            SUM(status = 'DELIVERED' AND estimatedArrivalAt IS NOT NULL AND deliveredAt <= estimatedArrivalAt) AS onTime,
-           SUM(status = 'DELAYED') AS delayed
+           SUM(status = 'DELAYED') AS delayedCount
     FROM shipments
     WHERE orgId = ${orgId} AND COALESCE(deliveredAt, createdAt) >= ${from}
     GROUP BY month
@@ -174,7 +174,7 @@ export async function getDeliveryPerformance(orgId: string) {
     month: r.month,
     delivered: Number(r.delivered),
     onTime: Number(r.onTime),
-    delayed: Number(r.delayed),
+    delayed: Number(r.delayedCount),
     onTimeRate: Number(r.delivered) ? Math.round((Number(r.onTime) / Number(r.delivered)) * 100) : null,
   }));
 }

@@ -43,7 +43,7 @@ describe("device-authenticated telemetry ingestion", () => {
     const res = await request(app)
       .post("/api/v1/telemetry/readings")
       .set("x-device-key", COLD_ROOM_KEY)
-      .send(reading({ sequenceNumber: 9100, temperature: 4.2 }));
+      .send(reading({ sequenceNumber: 9100, temperature: 4.2, isSimulated: true }));
 
     expect(res.status).toBe(201);
     expect(res.body.data.duplicate).toBe(false);
@@ -54,6 +54,45 @@ describe("device-authenticated telemetry ingestion", () => {
       where: { sequenceNumber: 9100, sensor: { deviceId: "FGS-HYD-C1A" } },
     });
     expect(Number(stored.temperature)).toBe(4.2);
+    expect(stored.isSimulated).toBe(false);
+    expect(stored.source).toBe("DEVICE");
+  });
+
+  it("stores late lower-sequence readings without changing live excursion state", async () => {
+    const current = await request(app)
+      .post("/api/v1/telemetry/readings")
+      .set("x-device-key", COLD_ROOM_KEY)
+      .send(reading({ sequenceNumber: 9930, temperature: 4.2, recordedAt: new Date().toISOString() }));
+    expect(current.status).toBe(201);
+    expect(current.body.data.outOfOrder).toBe(false);
+
+    const openBefore = await prisma.excursion.count({
+      where: { sensor: { deviceId: "FGS-HYD-C1A" }, status: "OPEN" },
+    });
+    const late = await request(app)
+      .post("/api/v1/telemetry/readings")
+      .set("x-device-key", COLD_ROOM_KEY)
+      .send(
+        reading({
+          sequenceNumber: 9929,
+          temperature: 20,
+          recordedAt: new Date(Date.now() - 60_000).toISOString(),
+          isSimulated: true,
+        })
+      );
+
+    expect(late.status).toBe(201);
+    expect(late.body.data.outOfOrder).toBe(true);
+    expect(late.body.data.message).toMatch(/live excursion state was not changed/i);
+    expect(
+      await prisma.excursion.count({
+        where: { sensor: { deviceId: "FGS-HYD-C1A" }, status: "OPEN" },
+      })
+    ).toBe(openBefore);
+
+    const stored = await prisma.sensorReading.findFirstOrThrow({
+      where: { sequenceNumber: 9929, sensor: { deviceId: "FGS-HYD-C1A" } },
+    });
     expect(stored.isSimulated).toBe(false);
     expect(stored.source).toBe("DEVICE");
   });

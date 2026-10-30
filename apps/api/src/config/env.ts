@@ -6,7 +6,7 @@ import { z } from "zod";
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
 
-const schema = z.object({
+export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   API_PORT: z.coerce.number().int().default(4000),
   API_ORIGIN: z.string().url().default("http://localhost:4000"),
@@ -22,9 +22,34 @@ const schema = z.object({
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().default(10),
   LOG_LEVEL: z.string().default("info"),
   SEED_DEMO_PASSWORD: z.string().min(8).default("Frostguard#2026"),
+}).superRefine((value, ctx) => {
+  if (value.NODE_ENV !== "production") return;
+
+  const secrets: Array<[keyof typeof value, string]> = [
+    ["JWT_ACCESS_SECRET", value.JWT_ACCESS_SECRET],
+    ["JWT_REFRESH_SECRET", value.JWT_REFRESH_SECRET],
+    ["DEVICE_HMAC_SECRET", value.DEVICE_HMAC_SECRET],
+    ["SEED_DEMO_PASSWORD", value.SEED_DEMO_PASSWORD],
+  ];
+  for (const [name, secret] of secrets) {
+    if (/(dev-only|test-|change-me|replace-me|example|0123456789abcdef|Frostguard#2026)/i.test(secret)) {
+      ctx.addIssue({
+        code: "custom",
+        path: [name],
+        message: `${name} must be replaced with a unique production secret`,
+      });
+    }
+  }
+  if (value.JWT_ACCESS_SECRET === value.JWT_REFRESH_SECRET) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["JWT_REFRESH_SECRET"],
+      message: "JWT_REFRESH_SECRET must differ from JWT_ACCESS_SECRET",
+    });
+  }
 });
 
-const parsed = schema.safeParse(process.env);
+const parsed = envSchema.safeParse(process.env);
 if (!parsed.success) {
   // Fail closed: never boot with a partially configured security surface.
   console.error("Invalid environment configuration", parsed.error.flatten().fieldErrors);

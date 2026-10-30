@@ -181,6 +181,13 @@ export async function resolveIncident(
   requestId?: string
 ) {
   return prisma.$transaction(async (tx) => {
+    const locked = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+      "SELECT id FROM incidents WHERE id = ? AND orgId = ? FOR UPDATE",
+      id,
+      orgId
+    );
+    if (locked.length === 0) throw AppError.notFound("Incident not found");
+
     const incident = await tx.incident.findFirst({ where: { id, orgId } });
     if (!incident) throw AppError.notFound("Incident not found");
     if (!["ACKNOWLEDGED", "INVESTIGATING"].includes(incident.status)) {

@@ -68,14 +68,15 @@ export async function getProduct(orgId: string, id: string) {
 }
 
 export async function createProduct(orgId: string, actorId: string, input: ProductInput, requestId?: string) {
-  if (input.temperatureProfileId) {
-    const profile = await prisma.temperatureProfile.findFirst({
-      where: { id: input.temperatureProfileId, orgId },
-    });
-    if (!profile) throw AppError.badRequest("Temperature profile not found in this organization");
-  }
-
   return prisma.$transaction(async (tx) => {
+    if (input.temperatureProfileId) {
+      const profile = await tx.temperatureProfile.findFirst({
+        where: { id: input.temperatureProfileId, orgId },
+        select: { id: true },
+      });
+      if (!profile) throw AppError.badRequest("Temperature profile not found in this organization");
+    }
+
     const product = await tx.product.create({
       data: {
         orgId,
@@ -118,6 +119,14 @@ export async function updateProduct(
   if (!existing) throw AppError.notFound("Product not found");
 
   return prisma.$transaction(async (tx) => {
+    if (input.temperatureProfileId) {
+      const profile = await tx.temperatureProfile.findFirst({
+        where: { id: input.temperatureProfileId, orgId },
+        select: { id: true },
+      });
+      if (!profile) throw AppError.badRequest("Temperature profile not found in this organization");
+    }
+
     const product = await tx.product.update({
       where: { id },
       data: {

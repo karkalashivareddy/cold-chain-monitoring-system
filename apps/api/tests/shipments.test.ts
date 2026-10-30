@@ -4,9 +4,12 @@ import { app, bearer, login, NORTHLINE } from "./helpers";
 import { prisma } from "../src/lib/prisma";
 
 let token: string;
+let orgId: string;
 
 beforeAll(async () => {
-  token = (await login(NORTHLINE.owner)).token;
+  const session = await login(NORTHLINE.owner);
+  token = session.token;
+  orgId = session.user.organization.id;
 });
 
 describe("shipment dispatch and stock reservation", () => {
@@ -73,6 +76,48 @@ describe("shipment dispatch and stock reservation", () => {
 
     const after = await prisma.batch.findUniqueOrThrow({ where: { id: batch!.id } });
     expect(after.remainingQuantity).toBe(before - 60);
+  });
+
+  it("prevents two different shipments from reserving more than shared batch stock", async () => {
+    const warehouse = await prisma.warehouse.findFirstOrThrow({ where: { orgId } });
+    const batch = await prisma.batch.findFirstOrThrow({
+      where: {
+        orgId,
+        status: { in: ["AVAILABLE", "RESERVED"] },
+        expiresAt: { gt: new Date() },
+        remainingQuantity: { gte: 2 },
+      },
+      orderBy: { remainingQuantity: "desc" },
+    });
+    const before = batch.remainingQuantity;
+    const quantity = Math.floor(before / 2) + 1;
+    const payload = (destinationName: string) => ({
+      originWarehouseId: warehouse.id,
+      destinationName,
+      destinationCity: "Hyderabad",
+      destinationLat: 17.4,
+      destinationLng: 78.5,
+      items: [{ batchId: batch.id, quantity }],
+    });
+    const first = await request(app).post("/api/v1/shipments").set(bearer(token)).send(payload("Stock contention A"));
+    const second = await request(app).post("/api/v1/shipments").set(bearer(token)).send(payload("Stock contention B"));
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+
+    const shipmentIds = [first.body.data.id as string, second.body.data.id as string];
+    const results = await Promise.all(
+      shipmentIds.map((id) => request(app).post(`/api/v1/shipments/${id}/dispatch`).set(bearer(token)))
+    );
+    expect(results.map((result) => result.status).sort()).toEqual([200, 409]);
+
+    const after = await prisma.batch.findUniqueOrThrow({ where: { id: batch.id } });
+    expect(after.remainingQuantity).toBe(before - quantity);
+    const persistedShipments = await prisma.shipment.findMany({
+      where: { id: { in: shipmentIds } },
+      select: { id: true, status: true },
+    });
+    expect(persistedShipments.filter((shipment) => shipment.status === "DISPATCHED")).toHaveLength(1);
+    expect(persistedShipments.filter((shipment) => shipment.status === "PLANNED")).toHaveLength(1);
   });
 
   it("stores a shipment event and exposes it on the detail timeline", async () => {
