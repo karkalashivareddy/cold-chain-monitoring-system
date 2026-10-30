@@ -1,0 +1,39 @@
+{
+  "name": "frostguard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FROSTGUARD — enterprise cold-chain intelligence, monitoring and traceability platform.",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build:shared": "npm run build -w @frostguard/shared",
+    "dev": "npm run build:shared && concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev -w @frostguard/api",
+    "dev:web": "npm run dev -w @frostguard/web",
+    "build": "npm run build:shared && npm run build -w @frostguard/api && npm run build -w @frostguard/web",
+    "typecheck": "npm run build:shared && npm run typecheck -w @frostguard/api && npm run typecheck -w @frostguard/web",
+    "lint": "eslint .",
+    "test": "npm run test -w @frostguard/api",
+    "test:e2e": "npm run test:e2e -w @frostguard/web",
+    "db:generate": "npm run db:generate -w @frostguard/api",
+    "db:migrate": "npm run db:migrate -w @frostguard/api",
+    "db:seed": "npm run db:seed -w @frostguard/api",
+    "db:reset": "npm run db:reset -w @frostguard/api",
+    "db:sql": "npm run db:sql -w @frostguard/api",
+    "db:setup": "npm run db:migrate && npm run db:sql && npm run db:seed"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.5",
+    "globals": "^16.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.1"
+  }
+}
