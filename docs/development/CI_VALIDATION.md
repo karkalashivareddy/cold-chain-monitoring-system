@@ -22,6 +22,6 @@ The workflow uses only local test credentials in its test job environment. It do
 
 Future workflow edits should be validated by inspecting the actual remote run and recording its ID, SHA and conclusion. Do not represent local validation as remote CI execution.
 
-## Current branch update — 2026-10-31
+## Current main update — 2026-10-31
 
-The current feature branch adds API documentation route wiring and coverage, and clarifies the dependency checker so it no longer implies optional peer findings are proven absent from production omission installs. Local `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd test` (13 files / 66 tests), and `npm.cmd run test:e2e -w @frostguard/web` (3 tests) passed. This source revision has not yet been pushed and has no remote Actions run. The passing run above remains evidence only for SHA `4237f09`.
+API docs, CSV safety, accessible mobile navigation, and CI audit wording were pushed directly to main at `e11a5eb`. GitHub Actions run `41108491962` failed the mobile landing-page link interaction; its authenticated dashboard and 14-route smoke passed. The menu was laid out inside a horizontal flex row, placing the link outside the clickable viewport in Linux Chromium. The nav now renders below the row. The corrected main commit `4afca15c3b7555ac59f0f42a0c0b42a299b0e1fc` passed run `41109670804`; the pre-fix direct-push run `41109115088` failed the same interaction. PR #1 was closed unmerged per owner direction.

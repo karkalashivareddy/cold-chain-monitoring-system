@@ -161,7 +161,7 @@ Current exact results and blocker list are in [release candidate report](audit/R
 
 ## Current branch addendum — 2026-10-31
 
-Current work is on `frostguard/enterprise-completion`, based on pushed `main` commit `7d55f0a`. This branch is not yet committed or pushed. It preserves pre-existing untracked JPEGs and older screenshot files by excluding them from changes.
+Three phase commits were pushed directly to `main` through `e11a5ebfad871a80bdbcdc39af44f5b286ab0134`. A temporary PR was opened to trigger CI, then closed unmerged per owner direction. Pre-existing untracked JPEGs and older screenshots remain preserved and excluded.
 
 - Added the advertised API docs page (`GET /api/v1/docs`) and OpenAPI JSON (`GET /api/v1/openapi.json`), with auth/route metadata regression coverage.
 - Added report CSV formula-injection and download-filename sanitization with nine focused tests.
@@ -169,6 +169,6 @@ Current work is on `frostguard/enterprise-completion`, based on pushed `main` co
 - Local current-branch verification: typecheck PASS; ESLint PASS; production build PASS; MySQL tests PASS (13 files / 66 tests); Playwright PASS (3 tests). Build entry 498.24 kB minified / 152.10 kB gzip.
 - Added four new landing/dashboard screenshots from the actual app at desktop and mobile sizes. Existing four untracked screenshots at the older path remain untouched and excluded.
 - `scripts/check-audit.mjs` output now states that dev/devOptional lock entries require separate production-omission review. Three high Prisma/deepmerge-ts advisory findings remain unresolved and must not be considered closed.
-- Current branch CI, GitHub push, PR, and remote verification are pending. No production deployment, independent external security review, penetration test, or WCAG conformance claim is made.
+- The pushed main CI run `41108491962` exposed a Linux-only mobile navigation click defect. It was fixed by moving the mobile disclosure out of the horizontal header flex row. Local typecheck, lint, build, focused landing Playwright, and the prior 66-test MySQL suite passed; the corrected main SHA `4afca15c3b7555ac59f0f42a0c0b42a299b0e1fc` passed GitHub Actions run `41109670804`. No production deployment, independent external security review, penetration test, or WCAG conformance claim is made.
 
 Current overall status remains **PARTIALLY_IMPLEMENTED**; see `docs/audit/RELEASE_CANDIDATE_REPORT.md` for command evidence and blockers.

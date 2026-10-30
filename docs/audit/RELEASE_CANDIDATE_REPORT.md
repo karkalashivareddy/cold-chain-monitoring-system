@@ -56,16 +56,17 @@ This is a more defensible local release candidate, but **not production ready**.
 
 Related evidence: [transaction rollback audit](TRANSACTION_FAILURE_AND_ROLLBACK_AUDIT.md), [cross-tenant audit](../security/CROSS_TENANT_AUTHORIZATION_AUDIT.md), [outbox audit](REALTIME_OUTBOX_RELIABILITY.md), [route audit](FULL_ROUTE_ACCESSIBILITY_VISUAL_AUDIT.md), [asset register](ASSET_LICENSE_REGISTER.md), [technical debt](TECHNICAL_DEBT.md).
 
-## Current branch validation addendum — 2026-10-31
+## Current main validation addendum — 2026-10-31
 
-On `frostguard/enterprise-completion`, the API now serves the advertised `/api/v1/docs` page and machine-readable `/api/v1/openapi.json`. OpenAPI metadata covers the mounted API route inventory and describes device authentication for telemetry ingestion, public health checks, cookie-or-body refresh/logout, and no-body state actions. `apps/api/tests/auth.test.ts` verifies both documentation endpoints and selected security/route details.
+The changes are on `main` at `e11a5ebfad871a80bdbcdc39af44f5b286ab0134`. The API serves `/api/v1/docs` and `/api/v1/openapi.json`; OpenAPI metadata covers the mounted route inventory, telemetry device authentication, public health checks, cookie-or-body refresh/logout, file report content types, and no-body state actions. `apps/api/tests/auth.test.ts` verifies the documentation endpoints and selected security/route details.
 
 - `npm.cmd run typecheck`: PASS.
 - `npm.cmd run lint`: PASS.
 - `npm.cmd test`: PASS, 13 test files / 66 MySQL tests, using the documented temporary process preload and disposable test schema.
 - `npm.cmd run build`: PASS; entry 498.24 kB minified / 152.10 kB gzip; chart 409.19 / 115.43 kB; map 156.56 / 46.13 kB.
 - `git diff --check`: PASS.
-- Playwright and remote CI for this branch: not yet rerun/verified at this addendum's creation.
+- Playwright: the full suite passed locally (3 tests), including the landing interaction, seeded dashboard, and authenticated 14-route smoke. GitHub Actions initially exposed a Linux-only mobile menu defect: the dropdown was nested in a horizontal flex row, leaving its link outside the clickable viewport. The nav was moved below the row. After the correction, typecheck, lint, production build, and focused landing-page Playwright test passed locally.
+- GitHub Actions run `41108491962` failed the landing-page link click; its dashboard and 14-route tests passed. Temporary PR #1 was closed unmerged at owner direction. Run `41109115088` failed the same pre-fix test. The corrected direct-main commit `4afca15c3b7555ac59f0f42a0c0b42a299b0e1fc` passed run `41109670804`.
 - Dependency advisories: three high findings remain on the Prisma config / `deepmerge-ts` path. The CI audit-check message was clarified to avoid implying optional peer paths are proven absent from production-omission installs.
 
-Release remains **PARTIALLY_IMPLEMENTED**; this is local verification evidence, not production verification.
+Release remains **PARTIALLY_IMPLEMENTED**. The corrected main commit passed GitHub Actions, but outstanding security, accessibility, distributed realtime, license, and production-infrastructure gaps prevent a production-readiness claim.
