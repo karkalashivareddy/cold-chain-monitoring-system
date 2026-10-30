@@ -86,12 +86,12 @@ These points are intentionally explicit:
 - **No password-reset, change-password, email-verification or MFA flow.**
 - **No email/SMS/push delivery.** `notification_logs` rows are in-app records only.
 - **No external object storage or document upload.** CSV/PDF reports are generated on demand.
-- **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; remote execution has not been verified.
+- **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; run 41098761499 on commit 4237f09 passed the configured workflow.
 - **No external penetration test, threat-model validation or compliance audit** is evidenced.
 - **A Playwright public landing smoke test is present** and has passed in Vite dev and production preview. Authenticated end-to-end workflows remain incomplete.
-- **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency classification; a remote run has not been verified.
+- **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency classification; remote run 41098761499 passed on commit 4237f09.
 - **No production deployment, reverse-proxy, TLS or backup configuration** is included.
-- The public landing page is implemented and has been inspected at desktop and mobile sizes. Authenticated application pages still require browser verification.
+- The public landing page and 14 authenticated routes were exercised with Playwright; landing/dashboard screenshots were inspected at desktop and mobile sizes. Broader end-to-end business workflows and accessibility audits remain incomplete.
 - Production use would require validation, monitoring, backup/restore, retention, secret management and regulatory review. None of those are claimed here.
 
 ---
@@ -183,7 +183,7 @@ cold-chain-monitoring-system/
 └── tsconfig.base.json
 ```
 
-There is no committed container definition, infrastructure-as-code directory or deployment manifest. A CI workflow exists, but no remote GitHub Actions run is verified.
+There is no committed container definition, infrastructure-as-code directory or deployment manifest. A CI workflow exists, and remote GitHub Actions run 41098761499 passed.
 
 ---
 

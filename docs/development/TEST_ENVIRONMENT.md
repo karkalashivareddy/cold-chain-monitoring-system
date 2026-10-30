@@ -64,7 +64,7 @@ This shim should not be committed, made a default script, or used in deployed pr
 
 ## Stable alternative environment
 
-The local GitHub Actions workflow specifies Ubuntu, Node 22, and a MySQL 8.4 service, followed by `npm ci`, client generation, migration/SQL validation, typecheck, lint, build, integration tests and browser tests. This is the intended clean reproducible environment. The workflow has not been run remotely because it is not present on the remote default branch, and its local YAML has only been manually inspected. Treat it as a configured candidate, not verified CI evidence.
+The GitHub Actions workflow specifies Ubuntu, Node 22, and a MySQL 8.4 service, followed by `npm ci`, client generation, migration/SQL validation, typecheck, lint, build, integration tests and browser tests. Remote run `41098761499` passed on commit `4237f09`; this provides a reproducible Linux CI environment. Local Windows execution still required the documented process-scoped workaround.
 
 On a Linux host or WSL2 with MySQL available at `127.0.0.1:3306` using the isolated test credentials:
 

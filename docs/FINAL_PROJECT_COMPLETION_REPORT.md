@@ -4,7 +4,7 @@
 **Repository:** `karkalashivareddy/cold-chain-monitoring-system`\
 **Branch at audit:** `main`\
 **Starting HEAD:** `268e1b4`\
-**Overall status:** **PARTIALLY_IMPLEMENTED**. The repository contains a functioning prototype with a verified public landing page, an authenticated API-backed dashboard smoke and 40 passing MySQL integration tests. Full operational workflows, rollback testing, remote CI and deployment readiness remain incomplete.
+**Overall status:** **PARTIALLY_IMPLEMENTED**. The repository contains a functioning prototype with verified API-backed workflows, 56 passing MySQL integration tests, browser smoke coverage, and a passing remote CI run. Distributed realtime, exhaustive security/accessibility review and hosted deployment remain incomplete.
 
 ## 1. Repository and branch
 
@@ -41,18 +41,18 @@ See [feature matrix](audit/FEATURE_COMPLETION_MATRIX.md) for per-feature status 
 - Product and batch temperature-profile references and maintenance-log sensor references are tenant-scoped in write transactions, with MySQL regression coverage for rejected cross-org IDs.
 - Telemetry serializes per sensor, stores lower-sequence late readings without changing live excursion/alert state, and derives simulated provenance from trusted internal simulator context.
 - Vitest is updated to 4.1.12; current audit has no Vitest/Tinypool advisory. High advisory residuals remain in Prisma CLI/config/deepmerge-ts development/optional tooling.
-- CI source includes clean-schema migration and SQL-control validation plus public and authenticated-dashboard Playwright smoke; no remote run is verified.
+- CI includes clean-schema migration and SQL-control validation plus public and authenticated-dashboard Playwright smoke. GitHub Actions run `41098761499` passed on commit `4237f09`.
 - Added `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md` and ESLint flat configuration.
 
 ## 5. Features still incomplete
 
-- Realtime outbox atomic claims for multiple API instances and duplicate-consumer semantics.
+- Cross-process Socket.IO fanout and independent OS-worker crash/restart validation.
 - Concurrent telemetry/assignment/revocation tests and a documented sequence reset policy.
 - Socket authorization/revocation automated tests and broader rollback/concurrency fault injection.
 - Deployment topology, Docker Compose, Nginx/TLS, private MySQL and secret manager setup.
 - Authenticated end-to-end product workflows, accessibility automation and full desktop/tablet/mobile screenshot review.
 - Measured Core Web Vitals/API/query performance and analysis of remaining large chart/map chunks.
-- Independent Claude review and remote CI execution.
+- Independent Claude review; remote CI is verified by run `41098761499`.
 
 ## 6. Architecture
 
@@ -68,7 +68,7 @@ Normalized entities cover organizations, users/RBAC, product profiles/products/b
 - Shipment dispatch: `Serializable`, shipment and batch `FOR UPDATE` locks, stock procedure, status/event/audit/outbox; concurrent double dispatch is tested.
 - Incident resolution: tenant-scoped `SELECT ... FOR UPDATE`, then state transition, disposition, action, alert/excursion resolution, notification, audit and outbox in one transaction; DB trigger validates resolution notes. Concurrent requests are covered: one resolves and the other conflicts.
 
-Rollback fault injection and multi-process outbox claims remain untested. See [transaction design](database/TRANSACTION_DESIGN.md).
+Trigger-injected rollback coverage passed for telemetry, dispatch, incident disposition and shipment creation. Cancellation/release and commit/network acknowledgement uncertainty remain untested. See [transaction design](database/TRANSACTION_DESIGN.md).
 
 ## 9. API endpoints
 
@@ -80,7 +80,7 @@ Public: `/`, `/login`. Authenticated `/app` routes: overview, products, batches/
 
 ## 11. Realtime capabilities
 
-Authenticated Socket.IO connections are checked against current membership and join server-selected `org:<id>` rooms. Outbox publisher handles committed changes and retry/backoff. No socket test or multi-instance coordination is verified.
+Authenticated Socket.IO connections are checked against current membership and permission-scoped topics. Outbox publisher handles committed changes and bounded retry/backoff. Tests cover authorization and lease recovery; cross-process Socket.IO fanout remains unverified.
 
 ## 12. Security controls
 
@@ -98,11 +98,11 @@ Argon2 password hashing; JWT access/refresh flow; membership/RBAC; Zod input val
 | Authenticated dashboard and route smoke | **VERIFIED** — compiled API on `frostguard_test`; route heading/landmark traversal, detail/empty state and mobile keyboard focus passed |
 | Full accessibility / every-route visual audit | **PARTIALLY_IMPLEMENTED** — no axe/WCAG, screen reader, all route screenshots or all requested viewports |
 | npm registry audit | **PARTIALLY_IMPLEMENTED** — no high/critical runtime entry per classifier; high Prisma CLI/config/deepmerge-ts dev/optional residual remains; raw audit exits 1 |
-| Remote CI workflow | **BLOCKED pending push** — local workflow parses, but remote Actions execution needs verification after the authorized push |
+| Remote CI workflow | **VERIFIED** — GitHub Actions run `41098761499` on SHA `4237f09` passed the configured workflow |
 
 ## 14. Performance measurements
 
-Current build artifact sizes: entry JS 497.93 kB minified / 152.00 kB gzip; charts 409.19 / 115.43 kB; route map 156.56 / 46.13 kB; CSS 73.55 / 16.53 kB. The prior reported entry was 903.52 / 223.88 kB; this comparison is not a controlled benchmark. No Core Web Vitals, API latency or DB latency claims. See [performance audit](FINAL_PERFORMANCE_AUDIT.md).
+Current build artifact sizes: entry JS 498.23 kB minified / 152.10 kB gzip; charts 409.19 / 115.44 kB; route map 156.56 / 46.13 kB; CSS 74.02 / 16.61 kB. The prior reported entry was 903.52 / 223.88 kB; this comparison is not a controlled benchmark. No Core Web Vitals, API latency or DB latency claims. See [performance audit](FINAL_PERFORMANCE_AUDIT.md).
 
 ## 15. Claude review status
 
@@ -114,7 +114,7 @@ Public landing and authenticated dashboard screenshots were captured with local 
 
 ## 17. Git commits
 
-Phase 24 backend correctness was committed as `7c4ed2f` (`fix: harden tenant transactions and realtime delivery`). The docs, web and CI phase is being prepared for a separate commit. Push and remote CI result are recorded in the Phase 24 addendum after execution.
+Phase 24 was committed and pushed in five reviewed commits: `7c4ed2f` (tenant, transaction and realtime integrity), `50c8562` (web/docs/CI/assets), `beccc57` and `d35124b` (remote-discovered CI fixes), and `4237f09` (CI test environment). Remote Actions run `41098761499` on `4237f09` passed.
 
 ## 18. Deployment status
 
@@ -127,14 +127,14 @@ No deployment performed or verified. Docker engine was unavailable; repository h
 - No real hardware, GPS feed, external messaging, manufacturer stability data or external identity integration was verified.
 - The `tsx watch` API launcher fails before startup on this Windows host with Node `uv_os_get_passwd returned ENOMEM`; the compiled API did start with explicit test-only configuration against `frostguard_test`, and API routes also passed through Supertest/MySQL integration tests.
 - Local JPEG asset source/license terms are not documented; verify provenance before redistribution.
-- Outbox multi-instance claims, database production controls, visual QA, browser performance and independent review remain open.
+- Cross-process Socket.IO fanout, database production controls, complete accessibility QA, browser performance and independent external review remain open.
 
 ## 20. Recommended future work
 
 1. Close outbox multi-worker safety and telemetry concurrent ordering/recovery tests.
 2. Add socket auth tests, transaction failure injection and finish the cross-tenant relationship audit.
 3. Assess and resolve the Prisma CLI/config high advisories without an unvalidated major upgrade.
-4. Run the new CI workflow and resolve any failures.
+4. Keep the passing CI workflow green and address future failures.
 5. Add reproducible deployment configuration with HTTPS, private MySQL, managed secrets and backups.
 6. Complete browser visual/accessibility audits and real screenshots.
 7. Measure and improve bundle/Core Web Vitals and representative API/query latency.
@@ -146,14 +146,14 @@ No deployment performed or verified. Docker engine was unavailable; repository h
 
 This addendum supersedes earlier 40-test, selected-route, and outbox/security status statements above.
 
-- **Repository:** `main`, starting HEAD `268e1b4`; existing worktree changes preserved. The user authorized phase-wise commit and push in the latest instruction; publication is pending final stage/secret/asset checks and remote CI verification.
+- **Repository:** `main`, starting HEAD `268e1b4`, final pushed HEAD `4237f09`; existing untracked files preserved. The five phase commits are listed in section 17 and remote run `41098761499` passed.
 - **Newly verified:** Cross-tenant regression (5 tests), injected transaction rollback (4 tests), outbox/realtime (6 tests), analytics aggregate regression (1 test), full API/MySQL suite (**12 files / 56 tests passed**), and full Playwright Chromium suite (**3 tests passed**). Typecheck, ESLint, and production build passed.
 - **Analytics defect:** Browser route traversal found a MySQL SQL syntax failure caused by the alias `delayed`; renamed it to `delayedCount`, added a MySQL API regression, and the complete authenticated route smoke passed afterward.
 - **Outbox/realtime:** Atomic MySQL leases and token-fenced acknowledgements, bounded retries, topic permission rooms, periodic permission revalidation and reconnect query invalidation are implemented. Delivery is at-least-once. Cross-process Socket.IO fanout, independent OS-worker crash tests and replay tooling remain incomplete.
 - **Transaction evidence:** Trigger-injected required-outbox failures roll back telemetry, shipment dispatch, incident resolution and shipment creation. Cancellation/release and actual commit/network acknowledgement uncertainty remain untested.
 - **Security:** Cross-tenant coverage is broad but not exhaustive across every endpoint/export/relationship. No penetration test was performed. DBMS metadata is deployment-wide. High npm findings remain on the Prisma config/deepmerge-ts dependency chain; no unvalidated major upgrade was attempted.
 - **UX/screenshots:** Full route DOM smoke covers 14 application routes, detail states where fixture data exists, and mobile keyboard focus. Landing/dashboard screenshots were regenerated at 1366x768 and 390x844. axe/WCAG, screen-reader, tablet/large-desktop and all-route screenshot review remain open. Unknown JPEGs remain untouched locally, are no longer referenced by app code, and must be excluded from commits; older screenshots embedding them must also be excluded.
-- **CI/deployment:** Run `41098318439` on SHA `d35124b` passed migrations, SQL controls, typecheck, lint and build, then test global setup failed because its nested SQL script lacked JWT config. The workflow now sets test-only values for both migration and test steps; the next remote run is pending. No Docker image, hosted deployment, HTTPS/network isolation, managed production secrets, or backup restore was verified.
+- **CI/deployment:** Run `41098761499` on SHA `4237f09b4eaf0e34d5b1707d6f58fe4df69fad4b` passed migrations/SQL, typecheck, lint, build, MySQL integration tests, browser tests and dependency advisory classification. GitHub annotated Node.js 20 action deprecation and `ubuntu-latest` migration warnings; neither failed the run. No Docker image, hosted deployment, HTTPS/network isolation, managed production secrets, or backup restore was verified.
 - **Windows test environment:** `npm.cmd test` passes only with the documented temporary process preload on this host because `uv_os_get_passwd returned ENOMEM`; the preload is created in TEMP and removed in `finally`. It is not committed or used by production.
 - **Independent review:** Internal read-only review findings IR-01/02 and rollback items are dispositioned; IR-03 cross-process fanout and other listed limitations remain. Claude/external review remains blocked and is not claimed.
 

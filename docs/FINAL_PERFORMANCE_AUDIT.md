@@ -8,12 +8,12 @@ Initial reported `npm.cmd run build` output was compared with the current succes
 
 | Artifact | Minified size | Gzip size |
 | --- | ---: | ---: |
-| Largest current entry JavaScript chunk | 497.93 kB | 152.00 kB |
-| Charts chunk | 409.19 kB | 115.43 kB |
+| Largest current entry JavaScript chunk | 498.23 kB | 152.10 kB |
+| Charts chunk | 409.19 kB | 115.44 kB |
 | Route map chunk | 156.56 kB | 46.13 kB |
-| CSS | 73.55 kB | 16.53 kB |
+| CSS | 74.02 kB | 16.61 kB |
 
-The prior reported largest entry was 903.52 kB minified / 223.88 kB gzip. Current build entry is 497.93 / 152.00 kB. This is an observed artifact-size reduction in the current tree, not a controlled attribution to one change. The chart and map remain large route chunks; route-level lazy loading is present.
+The prior reported largest entry was 903.52 kB minified / 223.88 kB gzip. Current build entry is 498.23 / 152.10 kB. This is an observed artifact-size reduction in the current tree, not a controlled attribution to one change. The chart and map remain large route chunks; route-level lazy loading is present.
 
 ## Not measured
 

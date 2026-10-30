@@ -1,4 +1,4 @@
-# Production readiness assessment
+﻿# Production readiness assessment
 
 **Assessment date:** 2026-10-30\
 **Status:** NOT READY FOR PRODUCTION DEPLOYMENT. Local development and selected application tests pass, but no production deployment was attempted or authorized. No cloud services were provisioned and no paid costs were incurred.
@@ -30,7 +30,7 @@
 | Logging / observability | PARTIALLY_IMPLEMENTED | Pino and health routes exist; connect log collection, redaction review, alerting, metrics, retention and incident runbooks in the target environment |
 | Backups / recovery | NOT_IMPLEMENTED | No automated backup schedule or restore drill evidence |
 | Container image | NOT_IMPLEMENTED | No Dockerfile or image build evidence; decide non-root user, minimal runtime dependencies, healthcheck, signal handling and image scanning before adding one |
-| CI | PARTIALLY_IMPLEMENTED locally | Local GitHub Actions workflow includes MySQL migration/SQL, typecheck, lint, build, integration tests, Playwright and audit classifier; no remote run verified, and no local YAML parser/actionlint tool was available at last check |
+| CI | VERIFIED | GitHub Actions run `41098761499` passed all configured steps on SHA `4237f09`; actionlint/schema-specific validation remains unavailable locally |
 | Security validation | PARTIALLY_IMPLEMENTED | High development/optional Prisma tooling advisory remains assessed separately; no penetration test, production TLS review, or external assessment occurred |
 | Asset redistribution | PARTIALLY_IMPLEMENTED | Landing/login references original project SVGs; five unknown JPEGs remain unreferenced locally and must be excluded from publication; see asset register |
 
@@ -48,7 +48,7 @@ This is a proposed topology, not a verified deployment design. Confirm provider-
 
 ## CI source review
 
-`.github/workflows/ci.yml` provisions MySQL 8.4 for an Ubuntu job and runs `npm ci`, Prisma generation, migration + SQL application, typecheck, lint, build, MySQL tests, Chromium installation, compiled API + Playwright tests, and an npm audit classifier. Local YAML parse passed with `js-yaml`; actionlint and remote execution are not verified until after the authorized push. See [CI validation notes](../development/CI_VALIDATION.md). A local source parse is not a remote CI result.
+`.github/workflows/ci.yml` provisions MySQL 8.4 and runs `npm ci`, Prisma generation, migration + SQL application, typecheck, lint, build, MySQL tests, Chromium/browser tests and dependency advisory classification. Actual GitHub Actions run `41098761499` passed for SHA `4237f09`. `actionlint` was unavailable locally. See [CI validation notes](../development/CI_VALIDATION.md).
 
 ## Deployment decision
 

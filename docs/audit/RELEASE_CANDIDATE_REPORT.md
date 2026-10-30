@@ -1,11 +1,11 @@
-# Release Candidate Validation Report
+﻿# Release Candidate Validation Report
 
 **Date:** 2026-10-30\
 **Repository / branch:** `karkalashivareddy/cold-chain-monitoring-system`, `main`\
 **Starting commit:** `268e1b4`\
 **Status:** **PARTIALLY_IMPLEMENTED — not production-release ready**
 
-This report records local evidence after Phase 24. Existing tracked and untracked work was preserved. No production database operation, paid cloud deployment, or penetration test was performed. The user has now authorized phase-wise commits and push; final publication is pending staged-path/secret review.
+This report records local evidence after Phase 24. Existing tracked and untracked work was preserved. No production database operation, paid cloud deployment, or penetration test was performed. Phase 24 changes are committed and pushed through `4237f09`; untracked JPEGs of unclear provenance and older screenshots containing them remain preserved and excluded.
 
 ## Validation evidence
 
@@ -23,8 +23,8 @@ This report records local evidence after Phase 24. Existing tracked and untracke
 | Fresh additive migration | PASS | `db:deploy` applied both migrations to new disposable `frostguard_outbox_migration_test` |
 | Prior clean schema and SQL control validation | PASS | Separate disposable `frostguard_migration_test`; four SQL controls/34 statements |
 | `npm.cmd audit --json` and `--omit=dev` | RESIDUAL | Three high findings remain on Prisma config/deepmerge-ts dependency path; assessed in `docs/security/DEPENDENCY_ADVISORY_ASSESSMENT.md` |
-| `.github/workflows/ci.yml` parser | PASS locally | Parsed with installed `js-yaml`; no actionlint or remote workflow result |
-| GitHub Actions remote runs | FAIL, fixes in progress | Run `41098318439` (SHA `d35124b`) passed migration, SQL, typecheck, lint and build; test global setup then failed because its SQL child lacked JWT env. Workflow now supplies test-only config to both migration and test steps; rerun pending |
+| `.github/workflows/ci.yml` parser | PASS locally | Parsed with installed `js-yaml`; actionlint unavailable locally |
+| GitHub Actions remote run | PASS | Run `41098761499`, SHA `4237f09b4eaf0e34d5b1707d6f58fe4df69fad4b`; migrations/SQL, typecheck, lint, build, MySQL tests, Chromium/browser tests and dependency advisory classifier all passed |
 | Browser screenshots | PASS, partial routes | Fresh landing/dashboard at 1366x768 and 390x844; all other pages had functional DOM smoke, not screenshot review |
 | Docker/deployment smoke | BLOCKED | Docker engine unavailable; no production hosting deployment or paid resources used |
 | `git diff --check` | PASS | No whitespace errors; line-ending conversion notices only |
