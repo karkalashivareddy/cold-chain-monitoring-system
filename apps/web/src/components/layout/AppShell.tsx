@@ -260,6 +260,7 @@ export function AppShell() {
                   className="flex items-center gap-2 rounded-xl border border-line/70 bg-elevated/40 px-2 py-1.5 text-left transition-colors hover:border-cyan/30"
                 >
                   <Avatar name={user?.fullName ?? "FROSTGUARD"} />
+                  <span className="sr-only">Account menu</span>
                   <span className="hidden min-w-0 sm:block">
                     <span className="block truncate text-xs font-semibold text-ice">{user?.fullName}</span>
                     <span className="block truncate text-[10px] capitalize text-mist">{user?.role}</span>

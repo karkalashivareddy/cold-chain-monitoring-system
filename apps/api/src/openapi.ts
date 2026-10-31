@@ -8,6 +8,7 @@ type OperationOptions = {
   parameters?: Array<Record<string, unknown>>;
   body?: boolean;
   bodyRequired?: boolean;
+  csrfProtected?: boolean;
   success?: "200" | "201" | "200-201";
   successContentType?: string;
   successDescription?: string;
@@ -19,8 +20,15 @@ const pathParameter = (name: string) => ({
   required: true,
   schema: { type: "string" },
 });
+const csrfHeaderParameter = {
+  name: "x-frostguard-csrf",
+  in: "header",
+  required: false,
+  description: "Set to `1` whenever this unsafe request uses an FROSTGUARD access or refresh cookie. Bearer/device-key requests without FROSTGUARD cookies do not need it.",
+  schema: { type: "string", enum: ["1"] },
+};
 
-function operation({ id, summary, tag, auth = ["bearerAccess", "accessCookie"], parameters = [], body, bodyRequired = true, success = "200", successContentType, successDescription = "Successful operation." }: OperationOptions) {
+function operation({ id, summary, tag, auth = ["bearerAccess", "accessCookie"], parameters = [], body, bodyRequired = true, csrfProtected = false, success = "200", successContentType, successDescription = "Successful operation." }: OperationOptions) {
   const successfulCodes = success === "200-201" ? ["200", "201"] : [success ?? "200"];
   const responses: Record<string, unknown> = Object.fromEntries(successfulCodes.map((code) => [
     code,
@@ -45,7 +53,7 @@ function operation({ id, summary, tag, auth = ["bearerAccess", "accessCookie"], 
     summary,
     tags: [tag],
     ...(auth.length ? { security: auth.map((name) => ({ [name]: [] })) } : { security: [] }),
-    ...(parameters.length ? { parameters } : {}),
+    ...(parameters.length || csrfProtected ? { parameters: [...parameters, ...(csrfProtected ? [csrfHeaderParameter] : [])] } : {}),
     ...(body
       ? {
           requestBody: {
@@ -63,9 +71,9 @@ const id = (name: string) => [pathParameter(name)];
 const get = (id: string, summary: string, tag: string, parameters?: Array<Record<string, unknown>>, options: Partial<OperationOptions> = {}) =>
   operation({ id, summary, tag, parameters, ...options });
 const post = (id: string, summary: string, tag: string, options: Partial<OperationOptions> = {}) =>
-  operation({ id, summary, tag, body: true, ...options });
+  operation({ id, summary, tag, body: true, csrfProtected: true, ...options });
 const patch = (id: string, summary: string, tag: string, parameters: Array<Record<string, unknown>>) =>
-  operation({ id, summary, tag, parameters, body: true });
+  operation({ id, summary, tag, parameters, body: true, csrfProtected: true });
 
 /** API inventory is kept beside the Express mount table and smoke-tested through the public endpoint. */
 export const openApiDocument = {
@@ -86,9 +94,9 @@ export const openApiDocument = {
   ],
   paths: {
     "/": { get: operation({ id: "getApiInfo", summary: "API metadata and documentation links", tag: "Health", auth: [] }) },
-    "/auth/login": { post: operation({ id: "login", summary: "Create a user session", tag: "Authentication", auth: [], body: true, success: "200" }) },
-    "/auth/refresh": { post: operation({ id: "refreshSession", summary: "Rotate the refresh-token family using an HttpOnly cookie or request token", tag: "Authentication", auth: [], body: true, bodyRequired: false }) },
-    "/auth/logout": { post: operation({ id: "logout", summary: "Revoke the refresh-token family using an HttpOnly cookie or request token", tag: "Authentication", auth: [], body: true, bodyRequired: false }) },
+    "/auth/login": { post: operation({ id: "login", summary: "Create a user session", tag: "Authentication", auth: [], body: true, csrfProtected: true, success: "200" }) },
+    "/auth/refresh": { post: operation({ id: "refreshSession", summary: "Rotate the refresh-token family using an HttpOnly cookie or request token", tag: "Authentication", auth: [], body: true, bodyRequired: false, csrfProtected: true }) },
+    "/auth/logout": { post: operation({ id: "logout", summary: "Revoke the refresh-token family using an HttpOnly cookie or request token", tag: "Authentication", auth: [], body: true, bodyRequired: false, csrfProtected: true }) },
     "/auth/me": { get: get("getCurrentSession", "Read the current user's organization membership", "Authentication") },
     "/products": {
       get: get("listProducts", "List organization products", "Products"),
@@ -97,7 +105,7 @@ export const openApiDocument = {
     "/products/{id}": {
       get: get("getProduct", "Read a product", "Products", id("id")),
       patch: patch("updateProduct", "Update a product", "Products", id("id")),
-      delete: operation({ id: "archiveProduct", summary: "Archive a product", tag: "Products", parameters: id("id") }),
+      delete: operation({ id: "archiveProduct", summary: "Archive a product", tag: "Products", parameters: id("id"), csrfProtected: true }),
     },
     "/batches": {
       get: get("listBatches", "List batches", "Batches"),
@@ -124,7 +132,7 @@ export const openApiDocument = {
       get: get("getStorageUnit", "Read a storage unit", "Storage units", id("id")),
       patch: patch("updateStorageUnit", "Update a storage unit", "Storage units", id("id")),
     },
-    "/storage-units/{id}/maintenance": { post: post("addStorageMaintenance", "Record storage-unit maintenance", "Storage units", { parameters: id("id") }) },
+    "/storage-units/{id}/maintenance": { post: post("addStorageMaintenance", "Record storage-unit maintenance", "Storage units", { parameters: id("id"), success: "201" }) },
     "/devices": {
       get: get("listDevices", "List registered devices", "Devices"),
       post: post("registerDevice", "Register a device", "Devices", { success: "201" }),
@@ -137,7 +145,7 @@ export const openApiDocument = {
     "/devices/{id}/rotate-key": { post: post("rotateDeviceKey", "Rotate a device credential", "Devices", { parameters: id("id"), body: false }) },
     "/devices/{id}/revoke": { post: post("revokeDevice", "Revoke a device credential", "Devices", { parameters: id("id"), body: false }) },
     "/telemetry/readings": {
-      post: operation({ id: "ingestTelemetry", summary: "Ingest an authenticated device reading", tag: "Telemetry", auth: ["deviceKey"], body: true, success: "200-201" }),
+      post: operation({ id: "ingestTelemetry", summary: "Ingest an authenticated device reading", tag: "Telemetry", auth: ["deviceKey"], body: true, csrfProtected: true, success: "200-201" }),
       get: get("listTelemetryReadings", "Query organization telemetry history", "Telemetry"),
     },
     "/telemetry/latest": { get: get("getLatestTelemetry", "Read latest sensor readings", "Telemetry") },
@@ -155,7 +163,7 @@ export const openApiDocument = {
     "/shipments/{id}/dispatch": { post: post("dispatchShipment", "Dispatch a stock-reserved shipment", "Shipments", { parameters: id("id"), body: false }) },
     "/shipments/{id}/deliver": { post: post("deliverShipment", "Record shipment delivery", "Shipments", { parameters: id("id") }) },
     "/shipments/{id}/position": { patch: patch("updateShipmentPosition", "Record shipment position and progress", "Shipments", id("id")) },
-    "/shipments/{id}/events": { post: post("addShipmentEvent", "Record a shipment event", "Shipments", { parameters: id("id") }) },
+    "/shipments/{id}/events": { post: post("addShipmentEvent", "Record a shipment event", "Shipments", { parameters: id("id"), success: "201" }) },
     "/shipments/{id}/cancel": { post: post("cancelShipment", "Cancel a shipment and release eligible reservations", "Shipments", { parameters: id("id"), body: false }) },
     "/alerts": { get: get("listAlerts", "List organization alerts", "Alerts") },
     "/alerts/{id}/acknowledge": { post: post("acknowledgeAlert", "Acknowledge an alert", "Alerts", { parameters: id("id") }) },
@@ -183,7 +191,7 @@ export const openApiDocument = {
     },
     "/users/assignable": { get: get("listAssignableMembers", "List members eligible for incident assignment", "Users") },
     "/users/{userId}/role": { patch: patch("updateMemberRole", "Update a member role", "Users", id("userId")) },
-    "/users/{userId}": { delete: operation({ id: "removeMember", summary: "Remove a member from the organization", tag: "Users", parameters: id("userId") }) },
+    "/users/{userId}": { delete: operation({ id: "removeMember", summary: "Remove a member from the organization", tag: "Users", parameters: id("userId"), csrfProtected: true }) },
     "/reports/temperature": { get: get("exportTemperatureReport", "Export temperature readings as CSV", "Reports", undefined, { successContentType: "text/csv", successDescription: "CSV attachment." }) },
     "/reports/shipments": { get: get("exportShipmentReport", "Export shipment records as CSV", "Reports", undefined, { successContentType: "text/csv", successDescription: "CSV attachment." }) },
     "/reports/incidents": { get: get("exportIncidentReport", "Export incident records as CSV", "Reports", undefined, { successContentType: "text/csv", successDescription: "CSV attachment." }) },

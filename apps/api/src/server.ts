@@ -20,17 +20,27 @@ server.listen(env.API_PORT, () => {
 });
 
 let shuttingDown = false;
-async function shutdown(signal: string) {
+async function shutdown(signal: string, exitCode = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
   logger.info({ signal }, "Graceful shutdown started");
   stopOutboxWorker();
   stopAllSimulations();
   await closeRealtime().catch(() => undefined);
-  server.close();
+  await new Promise<void>((resolve) => {
+    const forceClose = setTimeout(() => {
+      server.closeAllConnections();
+      resolve();
+    }, 10_000);
+    forceClose.unref();
+    server.close(() => {
+      clearTimeout(forceClose);
+      resolve();
+    });
+  });
   await prisma.$disconnect().catch(() => undefined);
   logger.info("Graceful shutdown complete");
-  setTimeout(() => process.exit(0), 250).unref();
+  setTimeout(() => process.exit(exitCode), 250).unref();
 }
 
 process.on("SIGINT", () => void shutdown("SIGINT"));
@@ -42,5 +52,5 @@ process.on("unhandledRejection", (reason) => {
 
 process.on("uncaughtException", (err) => {
   logger.fatal({ err }, "Uncaught exception — exiting");
-  void shutdown("uncaughtException");
+  void shutdown("uncaughtException", 1);
 });

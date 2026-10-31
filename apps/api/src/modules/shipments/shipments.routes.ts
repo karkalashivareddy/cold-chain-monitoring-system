@@ -9,7 +9,6 @@ import {
 import { authenticate, requirePermission } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { ok, paginated } from "../../lib/http";
-import { prisma } from "../../lib/prisma";
 import * as service from "./shipments.service";
 
 export const shipmentsRouter: Router = Router();
@@ -105,18 +104,13 @@ shipmentsRouter.post(
   validate(shipmentEventSchema),
   async (req, res, next) => {
     try {
-      const shipment = await service.getShipment(req.auth!.orgId, String(req.params.id));
-      const event = await prisma.shipmentEvent.create({
-        data: {
-          shipmentId: shipment.id,
-          type: req.body.type,
-          message: req.body.message,
-          lat: req.body.lat ?? null,
-          lng: req.body.lng ?? null,
-          occurredAt: req.body.occurredAt ?? new Date(),
-          createdById: req.auth!.userId,
-        },
-      });
+      const event = await service.addShipmentEvent(
+        req.auth!.orgId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body,
+        res.locals.requestId
+      );
       return res.status(201).json({ success: true, data: event, meta: { requestId: res.locals.requestId } });
     } catch (err) {
       next(err);

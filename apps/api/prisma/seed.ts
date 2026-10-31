@@ -840,7 +840,7 @@ async function main() {
 
   console.log("\n✔ Seed complete\n");
   console.log(`  Organizations: Northline Biologics (${orgA.id}), Meridian Cold Logistics (${orgB.id})`);
-  console.log(`  Users (password: ${env.SEED_DEMO_PASSWORD}):`);
+  console.log("  Demo users share the configured SEED_DEMO_PASSWORD (disposable development data only):");
   for (const u of [
     "owner@northline.demo",
     "manager@northline.demo",
@@ -852,11 +852,7 @@ async function main() {
     console.log(`    - ${u}`);
   }
   console.log(`  Readings seeded: ${readingCount + 24} (all marked isSimulated=true, source=SEED)`);
-  console.log("  Demo device keys (development only):");
-  for (const spec of [...sensorSpecs, ...vanSensorSpecs]) {
-    console.log(`    - ${spec.deviceId}: ${deviceKey(spec.deviceId).key}`);
-  }
-  console.log(`    - FGS-PUN-C1A: ${credentialB.key}`);
+  console.log("  Demo device keys are available only to the local seeded simulator; key material is not printed.");
   void usersB;
 }
 

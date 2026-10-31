@@ -120,6 +120,50 @@ describe("shipment dispatch and stock reservation", () => {
     expect(persistedShipments.filter((shipment) => shipment.status === "PLANNED")).toHaveLength(1);
   });
 
+  it("serializes cancellation against dispatch without losing reserved stock", async () => {
+    const warehouse = await prisma.warehouse.findFirstOrThrow({ where: { orgId } });
+    const batch = await prisma.batch.findFirstOrThrow({
+      where: {
+        orgId,
+        status: { in: ["AVAILABLE", "RESERVED"] },
+        expiresAt: { gt: new Date() },
+        remainingQuantity: { gte: 1 },
+      },
+      orderBy: { remainingQuantity: "desc" },
+    });
+    const quantity = 1;
+    const before = batch.remainingQuantity;
+    const created = await request(app)
+      .post("/api/v1/shipments")
+      .set(bearer(token))
+      .send({
+        originWarehouseId: warehouse.id,
+        destinationName: "Cancel-dispatch race test",
+        destinationCity: "Hyderabad",
+        destinationLat: 17.4,
+        destinationLng: 78.5,
+        items: [{ batchId: batch.id, quantity }],
+      });
+    expect(created.status).toBe(201);
+    const shipmentId = created.body.data.id as string;
+
+    const [cancelled, dispatched] = await Promise.all([
+      request(app).post(`/api/v1/shipments/${shipmentId}/cancel`).set(bearer(token)),
+      request(app).post(`/api/v1/shipments/${shipmentId}/dispatch`).set(bearer(token)),
+    ]);
+    expect([cancelled.status, dispatched.status].sort()).toEqual([200, 409]);
+
+    const [finalShipment, finalBatch] = await Promise.all([
+      prisma.shipment.findUniqueOrThrow({ where: { id: shipmentId } }),
+      prisma.batch.findUniqueOrThrow({ where: { id: batch.id } }),
+    ]);
+    if (finalShipment.status === "CANCELLED") expect(finalBatch.remainingQuantity).toBe(before);
+    else {
+      expect(finalShipment.status).toBe("DISPATCHED");
+      expect(finalBatch.remainingQuantity).toBe(before - quantity);
+    }
+  });
+
   it("stores a shipment event and exposes it on the detail timeline", async () => {
     const list = await request(app).get("/api/v1/shipments?status=DISPATCHED").set(bearer(token));
     const shipmentId = list.body.data[0].id as string;

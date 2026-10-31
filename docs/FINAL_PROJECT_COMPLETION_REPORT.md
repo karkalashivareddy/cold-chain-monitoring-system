@@ -1,10 +1,10 @@
 # FROSTGUARD Project Completion Report
 
-**Report date:** 2026-10-30\
+**Report date:** 2026-10-31\
 **Repository:** `karkalashivareddy/cold-chain-monitoring-system`\
 **Branch at audit:** `main`\
-**Starting HEAD:** `268e1b4`\
-**Overall status:** **PARTIALLY_IMPLEMENTED**. The repository contains a functioning prototype with verified API-backed workflows, 56 passing MySQL integration tests, browser smoke coverage, and a passing remote CI run. Distributed realtime, exhaustive security/accessibility review and hosted deployment remain incomplete.
+**Starting HEAD for this completion pass:** `42f1ab5e1c48ef4fa41f7e3b46a9094e70aefb46`\
+**Overall status:** **PARTIALLY_IMPLEMENTED**. The repository contains a functioning prototype with verified API-backed workflows, 69 passing MySQL integration tests, four Playwright suites including axe checks and product lifecycle actions, and a passing baseline CI run. Container runtime, distributed realtime, exhaustive security/accessibility review and hosted deployment remain incomplete. Current-pass evidence and release decision are in [release candidate report](audit/RELEASE_CANDIDATE_REPORT.md).
 
 ## 1. Repository and branch
 
@@ -41,7 +41,7 @@ See [feature matrix](audit/FEATURE_COMPLETION_MATRIX.md) for per-feature status 
 - Product and batch temperature-profile references and maintenance-log sensor references are tenant-scoped in write transactions, with MySQL regression coverage for rejected cross-org IDs.
 - Telemetry serializes per sensor, stores lower-sequence late readings without changing live excursion/alert state, and derives simulated provenance from trusted internal simulator context.
 - Vitest is updated to 4.1.12; current audit has no Vitest/Tinypool advisory. High advisory residuals remain in Prisma CLI/config/deepmerge-ts development/optional tooling.
-- CI includes clean-schema migration and SQL-control validation plus public and authenticated-dashboard Playwright smoke. GitHub Actions run `41098761499` passed on commit `4237f09`.
+- CI includes clean-schema migration and SQL-control validation plus public and authenticated-dashboard Playwright smoke. Baseline GitHub Actions run `41110200375` passed on commit `42f1ab5`; current completion changes require another remote run.
 - Added `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md` and ESLint flat configuration.
 
 ## 5. Features still incomplete
@@ -49,8 +49,8 @@ See [feature matrix](audit/FEATURE_COMPLETION_MATRIX.md) for per-feature status 
 - Cross-process Socket.IO fanout and independent OS-worker crash/restart validation.
 - Concurrent telemetry/assignment/revocation tests and a documented sequence reset policy.
 - Socket authorization/revocation automated tests and broader rollback/concurrency fault injection.
-- Deployment topology, Docker Compose, Nginx/TLS, private MySQL and secret manager setup.
-- Authenticated end-to-end product workflows, accessibility automation and full desktop/tablet/mobile screenshot review.
+- Container build/runtime verification, TLS/managed secrets, private production MySQL and secret manager setup.
+- Complete authenticated workflows, independent accessibility review and all-route desktop/tablet/mobile visual coverage.
 - Measured Core Web Vitals/API/query performance and analysis of remaining large chart/map chunks.
 - Independent Claude review; remote CI is verified by run `41098761499`.
 
@@ -93,12 +93,12 @@ Argon2 password hashing; JWT access/refresh flow; membership/RBAC; Zod input val
 | `npm.cmd run typecheck` | **VERIFIED** — passed |
 | `npm.cmd run lint` | **VERIFIED** — passed after adding flat config and removing unused items |
 | `npm.cmd run build` | **VERIFIED** — passed; entry 498.24 kB minified / 152.10 kB gzip, chart 409.19 kB, map 156.56 kB |
-| `npm.cmd test` | **VERIFIED** — 13 files / 66 tests passed against disposable `frostguard_test` only |
-| Playwright Chromium suite | **VERIFIED** — 3 tests passed: landing, authenticated dashboard and 14-route smoke |
+| `npm.cmd test` | **VERIFIED locally** — 13 files / 69 tests passed against disposable `frostguard_test` only |
+| Playwright Chromium suite | **VERIFIED locally** — 4 tests passed: landing/axe, authenticated dashboard, 14-route axe smoke, live API product lifecycle |
 | Authenticated dashboard and route smoke | **VERIFIED** — compiled API on `frostguard_test`; route heading/landmark traversal, detail/empty state and mobile keyboard focus passed |
-| Full accessibility / every-route visual audit | **PARTIALLY_IMPLEMENTED** — no axe/WCAG, screen reader, all route screenshots or all requested viewports |
+| Automated accessibility / every-route visual audit | **PARTIALLY_IMPLEMENTED** — axe serious/critical scans pass for stated route/viewports; screen reader, formal WCAG conformance and all-route all-viewport review remain |
 | npm registry audit | **PARTIALLY_IMPLEMENTED** — no high/critical runtime entry per classifier; high Prisma CLI/config/deepmerge-ts dev/optional residual remains; raw audit exits 1 |
-| Remote CI workflow | **VERIFIED** — GitHub Actions run `41098761499` on SHA `4237f09` passed the configured workflow |
+| Remote CI workflow | **IMPLEMENTED_NOT_VERIFIED for this revision** — baseline run `41110200375` on SHA `42f1ab5` passed; final completion SHA must pass CI |
 
 ## 14. Performance measurements
 
@@ -161,7 +161,7 @@ Current exact results and blocker list are in [release candidate report](audit/R
 
 ## Current branch addendum — 2026-10-31
 
-Three phase commits were pushed directly to `main` through `e11a5ebfad871a80bdbcdc39af44f5b286ab0134`. A temporary PR was opened to trigger CI, then closed unmerged per owner direction. Pre-existing untracked JPEGs and older screenshots remain preserved and excluded.
+Three phase commits were pushed directly to `main` through `e11a5ebfad871a80bdbcdc39af44f5b286ab0134`; follow-ups `4afca15` (CI-discovered mobile navigation fix) and `42f1ab5` (final evidence) are also on `main`. A temporary PR was opened to trigger CI, then closed unmerged per owner direction. Pre-existing untracked JPEGs and older screenshots remain preserved and excluded.
 
 - Added the advertised API docs page (`GET /api/v1/docs`) and OpenAPI JSON (`GET /api/v1/openapi.json`), with auth/route metadata regression coverage.
 - Added report CSV formula-injection and download-filename sanitization with nine focused tests.
@@ -169,6 +169,12 @@ Three phase commits were pushed directly to `main` through `e11a5ebfad871a80bdbc
 - Local current-branch verification: typecheck PASS; ESLint PASS; production build PASS; MySQL tests PASS (13 files / 66 tests); Playwright PASS (3 tests). Build entry 498.24 kB minified / 152.10 kB gzip.
 - Added four new landing/dashboard screenshots from the actual app at desktop and mobile sizes. Existing four untracked screenshots at the older path remain untouched and excluded.
 - `scripts/check-audit.mjs` output now states that dev/devOptional lock entries require separate production-omission review. Three high Prisma/deepmerge-ts advisory findings remain unresolved and must not be considered closed.
-- The pushed main CI run `41108491962` exposed a Linux-only mobile navigation click defect. It was fixed by moving the mobile disclosure out of the horizontal header flex row. Local typecheck, lint, build, focused landing Playwright, and the prior 66-test MySQL suite passed; the corrected main SHA `4afca15c3b7555ac59f0f42a0c0b42a299b0e1fc` passed GitHub Actions run `41109670804`. No production deployment, independent external security review, penetration test, or WCAG conformance claim is made.
+- The pushed main CI run `41108491962` exposed a Linux-only mobile navigation click defect. It was fixed by moving the mobile disclosure out of the horizontal header flex row. Local typecheck, lint, build, focused landing Playwright, and the prior 66-test MySQL suite passed; the corrected main SHA `4afca15c3b7555ac59f0f42a0c0b42a299b0e1fc` passed GitHub Actions run `41109670804`. Final docs commit `42f1ab5` is undergoing run `41110200375`. No production deployment, independent external security review, penetration test, or WCAG conformance claim is made.
 
 Current overall status remains **PARTIALLY_IMPLEMENTED**; see `docs/audit/RELEASE_CANDIDATE_REPORT.md` for command evidence and blockers.
+
+## 2026-10-31 local release-candidate extension
+
+The latest local pass started from `42f1ab5e1c48ef4fa41f7e3b46a9094e70aefb46`; it is not yet on a remotely validated SHA. A clean `npm ci`, Prisma generation, typecheck, lint and production build passed. The MySQL suite passed 13 files / 69 tests on the disposable schema, and Playwright passed 4/4 tests, including axe checks and a real product validate/create/edit/archive flow. The build copies only the `public-safe` SVG/favicon allowlist; generated `dist` was checked and contains no unknown JPEG files.
+
+New transaction coverage serializes cancellation against dispatch and proves cancellation and timeline-event state/audit/outbox rollback. Local Docker Compose syntax passes, but Docker Engine is unavailable; no container image or service has run. The latest full and `--omit=dev` dependency audits still report three high findings on the Prisma/deepmerge-ts path. The versioned release remains blocked pending runtime/container and final remote-CI evidence; no production deployment, penetration test, WCAG conformance or clean dependency audit is claimed.

@@ -17,6 +17,11 @@ describe("authentication and session lifecycle", () => {
     expect(spec.body.paths["/shipments/{id}/dispatch"].post.requestBody).toBeUndefined();
     expect(spec.body.paths["/health/ready"].get.security).toEqual([]);
     expect(spec.body.paths["/reports/temperature"].get.responses["200"].content["text/csv"]).toBeDefined();
+    expect(spec.body.paths["/products"].post.parameters).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "x-frostguard-csrf", in: "header", required: false }),
+    ]));
+    expect(spec.body.paths["/storage-units/{id}/maintenance"].post.responses["201"]).toBeDefined();
+    expect(spec.body.paths["/shipments/{id}/events"].post.responses["201"]).toBeDefined();
   });
 
   it("rejects an invalid password without revealing whether the account exists", async () => {

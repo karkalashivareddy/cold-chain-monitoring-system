@@ -251,6 +251,13 @@
   }
 }
 
+/* Small secondary labels still need readable contrast on the dark surfaces. */
+[class~="text-mist/50"],
+[class~="text-mist/60"],
+[class~="text-mist/70"] {
+  color: var(--color-mist);
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Leaflet (dark treatment for the allow-listed OSM tiles)                   */
 /* -------------------------------------------------------------------------- */

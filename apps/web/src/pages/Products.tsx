@@ -2,23 +2,20 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Boxes, Package, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { STORAGE_UNIT_TYPES } from "@frostguard/shared";
 import { api, apiErrorMessage, type PageResult } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { fmtNumber, fmtTemp, humanize } from "@/lib/format";
 import { useDebouncedValue } from "@/lib/hooks";
 import type { Product } from "@/lib/types";
+import { ProductDialog } from "@/components/catalog/ProductDialog";
 import {
   Badge,
   Button,
   ConfirmDialog,
   EmptyState,
   ErrorState,
-  Field,
   FilterBar,
-  Input,
   Kpi,
-  Modal,
   PageHeader,
   PageSkeleton,
   Pagination,
@@ -26,167 +23,11 @@ import {
   SearchInput,
   SegmentedControl,
   Select,
-  Switch,
   TD,
   TH,
   TR,
   TableWrap,
-  Textarea,
 } from "@/components/ui";
-
-type ProductForm = {
-  code: string;
-  name: string;
-  category: string;
-  manufacturer: string;
-  description: string;
-  storageType: string;
-  minTemp: string;
-  maxTemp: string;
-  isActive: boolean;
-};
-
-const EMPTY_FORM: ProductForm = {
-  code: "",
-  name: "",
-  category: "",
-  manufacturer: "",
-  description: "",
-  storageType: "FRIDGE",
-  minTemp: "2",
-  maxTemp: "8",
-  isActive: true,
-};
-
-export function ProductDialog({
-  open,
-  product,
-  onClose,
-}: {
-  open: boolean;
-  product: Product | null;
-  onClose: () => void;
-}) {
-  const queryClient = useQueryClient();
-  const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setError(null);
-    setForm(
-      product
-        ? {
-            code: product.code,
-            name: product.name,
-            category: product.category,
-            manufacturer: product.manufacturer ?? "",
-            description: product.description ?? "",
-            storageType: product.storageType,
-            minTemp: String(product.minTemp),
-            maxTemp: String(product.maxTemp),
-            isActive: product.isActive,
-          }
-        : EMPTY_FORM
-    );
-  }, [open, product]);
-
-  const mutation = useMutation({
-    mutationFn: async (payload: Record<string, unknown>) =>
-      product ? api.patch<Product>(`/products/${product.id}`, payload) : api.post<Product>("/products", payload),
-    onSuccess: () => {
-      toast.success(product ? "Product updated" : "Product created");
-      void queryClient.invalidateQueries({ queryKey: ["products"] });
-      onClose();
-    },
-    onError: (err) => setError(apiErrorMessage(err)),
-  });
-
-  function submit() {
-    setError(null);
-    if (!form.code.trim() || !form.name.trim() || !form.category.trim()) {
-      setError("Code, name and category are required.");
-      return;
-    }
-    const min = Number(form.minTemp);
-    const max = Number(form.maxTemp);
-    if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) {
-      setError("Minimum temperature must be lower than maximum temperature.");
-      return;
-    }
-    mutation.mutate({
-      code: form.code.trim().toUpperCase(),
-      name: form.name.trim(),
-      category: form.category.trim(),
-      manufacturer: form.manufacturer.trim() || null,
-      description: form.description.trim() || null,
-      storageType: form.storageType,
-      minTemp: min,
-      maxTemp: max,
-      isActive: form.isActive,
-    });
-  }
-
-  return (
-    <Modal
-      open={open}
-      onOpenChange={(value) => !value && onClose()}
-      title={product ? `Edit ${product.name}` : "New product"}
-      description="Storage envelope applies to every batch unless a batch overrides its profile."
-      size="lg"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button loading={mutation.isPending} onClick={submit}>
-            {product ? "Save changes" : "Create product"}
-          </Button>
-        </>
-      }
-    >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Product code" required>
-          <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="VAX-PF-04" />
-        </Field>
-        <Field label="Name" required>
-          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Pediatric vaccine" />
-        </Field>
-        <Field label="Category" required>
-          <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Vaccine" />
-        </Field>
-        <Field label="Manufacturer">
-          <Input value={form.manufacturer} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} />
-        </Field>
-        <Field label="Storage type">
-          <Select value={form.storageType} onChange={(e) => setForm({ ...form, storageType: e.target.value })}>
-            {STORAGE_UNIT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {humanize(type)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Min °C">
-            <Input type="number" step="0.1" value={form.minTemp} onChange={(e) => setForm({ ...form, minTemp: e.target.value })} />
-          </Field>
-          <Field label="Max °C">
-            <Input type="number" step="0.1" value={form.maxTemp} onChange={(e) => setForm({ ...form, maxTemp: e.target.value })} />
-          </Field>
-        </div>
-        <Field label="Description" className="sm:col-span-2">
-          <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        </Field>
-        <div className="sm:col-span-2">
-          <Switch checked={form.isActive} onChange={(value) => setForm({ ...form, isActive: value })} label="Active product" />
-        </div>
-      </div>
-      {error ? <p className="mt-4 rounded-lg border border-rose/30 bg-rose/10 p-2 text-xs text-rose">{error}</p> : null}
-    </Modal>
-  );
-}
-
 export default function ProductsPage() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
@@ -325,7 +166,7 @@ export default function ProductsPage() {
                     </TD>
                     <TD>{product.category}</TD>
                     <TD>{humanize(product.storageType)}</TD>
-                    <TD className="stat-value whitespace-nowrap">{fmtTemp(product.minTemp)} – {fmtTemp(product.maxTemp)}</TD>
+                    <TD className="stat-value whitespace-nowrap">{fmtTemp(product.minTemp)} â€“ {fmtTemp(product.maxTemp)}</TD>
                     <TD>{product._count?.batches ?? 0}</TD>
                     <TD><Badge tone={product.isActive ? "success" : "neutral"} dot>{product.isActive ? "Active" : "Archived"}</Badge></TD>
                     <TD>
@@ -351,7 +192,7 @@ export default function ProductsPage() {
         )}
       </Panel>
 
-      <ProductDialog open={dialogOpen} product={editing} onClose={() => setDialogOpen(false)} />
+      <ProductDialog open={dialogOpen} onOpenChange={setDialogOpen} product={editing} categories={categories} />
       <ConfirmDialog
         open={Boolean(archiving)}
         onOpenChange={(value) => !value && setArchiving(null)}

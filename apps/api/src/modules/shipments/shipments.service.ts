@@ -364,16 +364,15 @@ export async function updatePosition(
 }
 
 export async function cancelShipment(orgId: string, actorId: string, id: string, requestId?: string) {
-  return prisma.$transaction(async (tx) => {
-    const shipment = await tx.shipment.findFirst({ where: { id, orgId } });
-    if (!shipment) throw AppError.notFound("Shipment not found");
-    if (!["DRAFT", "PLANNED"].includes(shipment.status)) {
+  return withRetry(() => prisma.$transaction(async (tx) => {
+    const locked = await tx.$queryRaw<Array<{ status: string }>>`
+      SELECT status FROM shipments WHERE id = ${id} AND orgId = ${orgId} FOR UPDATE
+    `;
+    if (locked.length === 0) throw AppError.notFound("Shipment not found");
+    if (!["DRAFT", "PLANNED"].includes(locked[0]!.status)) {
       throw AppError.conflict("Only draft or planned shipments can be cancelled");
     }
-    const updated = await tx.shipment.update({
-      where: { id },
-      data: { status: "CANCELLED" },
-    });
+    const updated = await tx.shipment.update({ where: { id }, data: { status: "CANCELLED" } });
     await writeAudit(tx, {
       orgId,
       actorId,
@@ -386,6 +385,43 @@ export async function cancelShipment(orgId: string, actorId: string, id: string,
       data: { orgId, topic: "shipment:updated", payload: { shipmentId: id, status: "CANCELLED" } },
     });
     return updated;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20_000 }));
+}
+
+export async function addShipmentEvent(
+  orgId: string,
+  actorId: string,
+  id: string,
+  input: { type: string; message: string; lat?: number; lng?: number; occurredAt?: Date },
+  requestId?: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const shipment = await tx.shipment.findFirst({ where: { id, orgId }, select: { id: true, status: true } });
+    if (!shipment) throw AppError.notFound("Shipment not found");
+    const event = await tx.shipmentEvent.create({
+      data: {
+        shipmentId: shipment.id,
+        type: input.type,
+        message: input.message,
+        lat: input.lat ?? null,
+        lng: input.lng ?? null,
+        occurredAt: input.occurredAt ?? new Date(),
+        createdById: actorId,
+      },
+    });
+    await writeAudit(tx, {
+      orgId,
+      actorId,
+      action: "shipment.event_recorded",
+      entityType: "shipment",
+      entityId: shipment.id,
+      metadata: { eventId: event.id, type: event.type },
+      requestId,
+    });
+    await tx.outboxEvent.create({
+      data: { orgId, topic: "shipment:updated", payload: { shipmentId: shipment.id, status: shipment.status } },
+    });
+    return event;
   });
 }
 

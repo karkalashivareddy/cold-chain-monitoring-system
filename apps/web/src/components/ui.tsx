@@ -412,7 +412,7 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function PageSkeleton() {
   return (
-    <div className="space-y-4" aria-busy="true" aria-label="Loading">
+    <div className="space-y-4" role="status" aria-busy="true" aria-label="Loading">
       <Skeleton className="h-8 w-56" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -621,7 +621,7 @@ export function Tabs({
           )}
         >
           {tab.label}
-          {typeof tab.count === "number" ? <span className="ml-1.5 text-[10px] opacity-70">{tab.count}</span> : null}
+          {typeof tab.count === "number" ? <span className="ml-1.5 text-[10px]">{tab.count}</span> : null}
         </button>
       ))}
     </div>

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 test("authenticated operational routes render without runtime or server errors", async ({ page }) => {
   test.setTimeout(90_000);
@@ -33,11 +34,24 @@ test("authenticated operational routes render without runtime or server errors",
     ["/app/dbms", "MySQL objects, plans & integrity"],
   ] as const;
 
+  const audit = async (label: string) => {
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    const serious = results.violations.filter((violation) => ["critical", "serious"].includes(violation.impact ?? ""));
+    const lowerImpact = results.violations
+      .filter((violation) => !["critical", "serious"].includes(violation.impact ?? ""))
+      .map(({ id, impact, nodes }) => ({ id, impact, affectedNodes: nodes.length }));
+    if (lowerImpact.length) console.info(`[axe] ${label}: lower-impact findings ${JSON.stringify(lowerImpact)}`);
+    expect(serious, `${label}: critical/serious axe findings`).toEqual([]);
+  };
+
   for (const [path, heading] of routes) {
     await page.goto(path);
     await expect(page.getByRole("heading", { name: heading, exact: true }).first(), `${path} heading`).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
     await expect(page.getByRole("main")).toBeVisible();
+    await audit(path);
   }
 
   for (const [path, linkSelector] of [
@@ -70,8 +84,16 @@ test("authenticated operational routes render without runtime or server errors",
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/app/products");
   await expect(page.getByRole("heading", { name: "Products", exact: true })).toBeVisible();
+  await audit("/app/products at 390x844");
   await page.keyboard.press("Tab");
   await expect(page.locator(":focus")).toBeVisible();
+
+  for (const [width, height] of [[375, 812], [768, 1024], [1366, 768], [1920, 1080]] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/app");
+    await expect(page.getByRole("heading", { name: "Cold-chain overview" })).toBeVisible();
+    await audit(`/app at ${width}x${height}`);
+  }
 
   expect(pageErrors).toEqual([]);
   expect(serverErrors).toEqual([]);

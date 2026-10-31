@@ -84,7 +84,7 @@ export default function LandingPage() {
 
       <header className="fixed inset-x-0 top-0 z-40 border-b border-white/5 bg-abyss/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
-          <Link to="/" className="flex items-center gap-2.5" aria-label="FROSTGUARD home">
+          <Link to="/" className="flex items-center gap-2.5">
             <span className="flex size-9 items-center justify-center rounded-xl border border-cyan/30 bg-cyan/10">
               <Snowflake className="size-5 text-cyan" aria-hidden />
             </span>

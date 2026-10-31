@@ -160,4 +160,55 @@ describe("transaction rollback when required outbox persistence fails", () => {
     expect(response.status).toBe(500);
     expect(await prisma.shipment.count({ where: { orgId, destinationName } })).toBe(0);
   });
+
+  it("rolls back shipment cancellation and its audit record if outbox insertion fails", async () => {
+    const warehouse = await prisma.warehouse.findFirstOrThrow({ where: { orgId } });
+    const batch = await prisma.batch.findFirstOrThrow({
+      where: { orgId, status: { in: ["AVAILABLE", "RESERVED"] }, expiresAt: { gt: new Date() }, remainingQuantity: { gte: 1 } },
+      orderBy: { remainingQuantity: "desc" },
+    });
+    const created = await request(app)
+      .post("/api/v1/shipments")
+      .set(bearer(token))
+      .send({
+        originWarehouseId: warehouse.id,
+        destinationName: `Rollback cancellation ${Date.now()}`,
+        destinationCity: "Hyderabad",
+        destinationLat: 17.4,
+        destinationLng: 78.5,
+        items: [{ batchId: batch.id, quantity: 1 }],
+      });
+    expect(created.status).toBe(201);
+    const shipmentId = created.body.data.id as string;
+    const beforeAudit = await prisma.auditLog.count({ where: { orgId, action: "shipment.cancelled", entityId: shipmentId } });
+    const beforeEvents = await prisma.outboxEvent.count({ where: { orgId, topic: "shipment:updated" } });
+
+    const response = await withOutboxInsertFailure(() =>
+      request(app).post(`/api/v1/shipments/${shipmentId}/cancel`).set(bearer(token))
+    );
+
+    expect(response.status).toBe(500);
+    expect((await prisma.shipment.findUniqueOrThrow({ where: { id: shipmentId } })).status).toBe("PLANNED");
+    expect(await prisma.auditLog.count({ where: { orgId, action: "shipment.cancelled", entityId: shipmentId } })).toBe(beforeAudit);
+    expect(await prisma.outboxEvent.count({ where: { orgId, topic: "shipment:updated" } })).toBe(beforeEvents);
+  });
+
+  it("rolls back a shipment timeline event if its outbox write fails", async () => {
+    const shipment = await prisma.shipment.findFirstOrThrow({ where: { orgId, status: "PLANNED" } });
+    const message = `Rollback shipment event ${Date.now()}`;
+    const beforeAudit = await prisma.auditLog.count({ where: { orgId, action: "shipment.event_recorded", entityId: shipment.id } });
+    const beforeEvents = await prisma.outboxEvent.count({ where: { orgId, topic: "shipment:updated" } });
+
+    const response = await withOutboxInsertFailure(() =>
+      request(app)
+        .post(`/api/v1/shipments/${shipment.id}/events`)
+        .set(bearer(token))
+        .send({ type: "NOTE", message })
+    );
+
+    expect(response.status).toBe(500);
+    expect(await prisma.shipmentEvent.count({ where: { shipmentId: shipment.id, message } })).toBe(0);
+    expect(await prisma.auditLog.count({ where: { orgId, action: "shipment.event_recorded", entityId: shipment.id } })).toBe(beforeAudit);
+    expect(await prisma.outboxEvent.count({ where: { orgId, topic: "shipment:updated" } })).toBe(beforeEvents);
+  });
 });

@@ -4,6 +4,9 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  // Use an explicit allowlist directory so preserved assets with unknown
+  // provenance in `public/` are not copied into deployable build output.
+  publicDir: "public-safe",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

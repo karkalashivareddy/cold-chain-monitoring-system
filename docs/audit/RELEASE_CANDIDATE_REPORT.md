@@ -58,7 +58,7 @@ Related evidence: [transaction rollback audit](TRANSACTION_FAILURE_AND_ROLLBACK_
 
 ## Current main validation addendum — 2026-10-31
 
-The changes are on `main` at `e11a5ebfad871a80bdbcdc39af44f5b286ab0134`. The API serves `/api/v1/docs` and `/api/v1/openapi.json`; OpenAPI metadata covers the mounted route inventory, telemetry device authentication, public health checks, cookie-or-body refresh/logout, file report content types, and no-body state actions. `apps/api/tests/auth.test.ts` verifies the documentation endpoints and selected security/route details.
+The API, UI, and evidence changes were pushed directly to `main`; current head is `42f1ab5e1c48ef4fa41f7e3b46a9094e70aefb46`. The API serves `/api/v1/docs` and `/api/v1/openapi.json`; OpenAPI metadata covers the mounted route inventory, telemetry device authentication, public health checks, cookie-or-body refresh/logout, file report content types, and no-body state actions. `apps/api/tests/auth.test.ts` verifies the documentation endpoints and selected security/route details.
 
 - `npm.cmd run typecheck`: PASS.
 - `npm.cmd run lint`: PASS.
@@ -66,7 +66,39 @@ The changes are on `main` at `e11a5ebfad871a80bdbcdc39af44f5b286ab0134`. The API
 - `npm.cmd run build`: PASS; entry 498.24 kB minified / 152.10 kB gzip; chart 409.19 / 115.43 kB; map 156.56 / 46.13 kB.
 - `git diff --check`: PASS.
 - Playwright: the full suite passed locally (3 tests), including the landing interaction, seeded dashboard, and authenticated 14-route smoke. GitHub Actions initially exposed a Linux-only mobile menu defect: the dropdown was nested in a horizontal flex row, leaving its link outside the clickable viewport. The nav was moved below the row. After the correction, typecheck, lint, production build, and focused landing-page Playwright test passed locally.
-- GitHub Actions run `41108491962` failed the landing-page link click; its dashboard and 14-route tests passed. Temporary PR #1 was closed unmerged at owner direction. Run `41109115088` failed the same pre-fix test. The corrected direct-main commit `4afca15c3b7555ac59f0f42a0c0b42a299b0e1fc` passed run `41109670804`.
+- GitHub Actions run `41108491962` failed the landing-page link click; its dashboard and 14-route tests passed. Temporary PR #1 was closed unmerged at owner direction. Run `41109115088` failed the same pre-fix test. Corrected app/config commit `4afca15c3b7555ac59f0f42a0c0b42a299b0e1fc` passed run `41109670804`. The final report-only commit `42f1ab5` triggered run `41110200375`; that run's result is recorded below when available.
 - Dependency advisories: three high findings remain on the Prisma config / `deepmerge-ts` path. The CI audit-check message was clarified to avoid implying optional peer paths are proven absent from production-omission installs.
 
 Release remains **PARTIALLY_IMPLEMENTED**. The corrected main commit passed GitHub Actions, but outstanding security, accessibility, distributed realtime, license, and production-infrastructure gaps prevent a production-readiness claim.
+
+## 2026-10-31 local completion pass
+
+Starting SHA remained `42f1ab5e1c48ef4fa41f7e3b46a9094e70aefb46` on `main`; `origin/main` was fetched and matched. Latest successful remote baseline was run `41110200375` for that starting SHA. The following local changes are not yet included in a remote CI run.
+
+| Check | Result | Evidence / limits |
+|---|---|---|
+| `npm.cmd ci` | PASS | Clean install, 549 packages. npm 11 warned that lifecycle scripts for Prisma/argon2/esbuild require explicit approval; Prisma client generation then passed. |
+| `npm.cmd run db:generate` | PASS | Prisma Client 6.19.3 generated after approved access to Prisma's Windows engine download; schema unchanged. |
+| `npm.cmd run typecheck` | PASS | API and web after shipment, asset allowlist, accessibility and product-form changes. |
+| `npm.cmd run lint` | PASS | Full repository. |
+| `npm.cmd run build` | PASS | Entry 498.30 kB minified / 152.11 kB gzip; CSS 74.44 kB / 16.68 gzip; chart 409.19 kB / 115.44 gzip; map 156.56 kB / 46.13 gzip. |
+| `npm.cmd test` | PASS, 13 files / 69 MySQL tests | Disposable `frostguard_test`; temporary process-only Windows `geteuid` shim restored and deleted. Added shipment cancel/dispatch race and two outbox rollback cases. |
+| `npm.cmd run test:e2e -w @frostguard/web` | PASS, 4 Playwright tests | Public landing, authenticated dashboard, 14-route/detail smoke with axe, and live API product validation/create/edit/archive. All page errors and unexpected API 5xx responses were empty. Axe serious/critical findings were fixed. |
+| Responsive/accessibility sweep | PASS for documented scope | Landing at 375x812, 390x844, 768x1024, 1366x768 and 1920x1080; dashboard at the same sizes; products at 390x844; 14 operational routes at desktop. Does not establish WCAG conformance, screen-reader behavior or every route at every viewport. |
+| Vite production asset output | PASS | Only allowlisted project SVG illustrations and favicon copied from `apps/web/public-safe/`; no `.jpg`/`.jpeg` appears in `apps/web/dist`. Original unlicensed JPEGs remain untouched locally and excluded. |
+| `docker compose --env-file .env.compose.example config` | PASS | Compose syntax resolves. Docker Engine is unavailable (named pipe missing), so Dockerfiles, container health, migration service, proxy runtime and backup/restore were not exercised. |
+| `npm audit --json` / `--omit=dev` | RESIDUAL, exit 1 | Both report 3 high / 0 critical in `prisma@6.19.3 -> @prisma/config@6.19.3 -> deepmerge-ts@7.1.5`; proposed automatic remediation is Prisma 7.10.1 (major). No force upgrade or untested override was applied. |
+| `git diff --check` | PASS | Line-ending notices only. |
+
+### Changes in this pass
+
+- Shipment cancellation now locks its organization-scoped row in a serializable transaction, so it serializes against dispatch. Shipment timeline writes now include audit and outbox rows in the same transaction.
+- Product pages now use the shared form dialog with field-level validation instead of an older duplicate form. A Playwright workflow validates, creates, edits and archives a product against the live API.
+- Added axe-core to the browser suite and fixed contrast, accessible-name and status-role findings.
+- Vite now copies only `apps/web/public-safe/`, so the preserved unknown JPEGs under legacy `public/` are excluded from deployable output.
+- Added local Compose/Dockerfiles/Nginx definitions, private MySQL network, persistent volume, migration service and operational instructions. This is a definition only; runtime remains unverified.
+- Seed logs no longer print demo passwords or device keys. API shutdown waits up to 10 seconds for HTTP requests before closing remaining connections.
+
+### Release decision
+
+No version tag or GitHub release is prepared. The local Docker engine limitation blocks container runtime verification; a final pushed SHA and its Actions result are still pending. The dependency advisory remains open with documented restricted-tooling mitigation. Cross-process Socket.IO, independent review/penetration test, backup-restore drill and hosted production configuration remain unverified. Do not claim production readiness or a completed release.

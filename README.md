@@ -15,7 +15,7 @@ FROSTGUARD is a multi-tenant reference implementation for temperature-controlled
 - [Architecture](#architecture)
 - [Monorepo layout](#monorepo-layout)
 - [Local setup with MySQL 8.0](#local-setup-with-mysql-80)
-- [Docker Compose status](#docker-compose-status)
+- [Docker Compose local deployment](#docker-compose-local-deployment)
 - [Environment variables](#environment-variables)
 - [Database commands](#database-commands)
 - [Demo accounts](#demo-accounts)
@@ -80,8 +80,7 @@ The application is browser-first. `POST /api/v1/telemetry/readings` is the devic
 
 These points are intentionally explicit:
 
-- **No `docker-compose.yml` exists anywhere in this repository.** Docker/Compose usage is therefore not documented as a working workflow and was not runtime-verified.
-- **No Docker runtime verification was performed** for this documentation, including the MySQL 8.4 image mentioned in the Prisma schema header.
+- Dockerfiles, Compose and Nginx definitions are present. Compose syntax was checked, but image builds/startup are **not runtime-verified** because the Docker Engine is unavailable on the current host; see [local deployment guide](docs/deployment/DOCKER_LOCAL.md).
 - **OpenAPI 3.1 is served at `/api/v1/openapi.json`**, with a same-origin API documentation page at `/api/v1/docs`. It documents the mounted API route inventory; request/response schemas remain intentionally generic for some operations.
 - **No password-reset, change-password, email-verification or MFA flow.**
 - **No email/SMS/push delivery.** `notification_logs` rows are in-app records only.
@@ -90,7 +89,7 @@ These points are intentionally explicit:
 - **No external penetration test, threat-model validation or compliance audit** is evidenced.
 - **Playwright coverage includes the public landing page, a seeded live dashboard, and authenticated route smoke across 14 operational routes.** The route smoke does not cover every control or full business workflow.
 - **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency classification; remote run 41098761499 passed on commit 4237f09.
-- **No production deployment, reverse-proxy, TLS or backup configuration** is included.
+- **No production deployment, TLS termination, or executed backup/restore drill** is evidenced. Local Nginx proxy and backup instructions are documented; container runtime remains unverified.
 - The public landing page and 14 authenticated routes were exercised with Playwright; landing/dashboard screenshots were inspected at desktop and mobile sizes. Broader end-to-end business workflows and accessibility audits remain incomplete.
 - Production use would require validation, monitoring, backup/restore, retention, secret management and regulatory review. None of those are claimed here.
 
@@ -183,7 +182,7 @@ cold-chain-monitoring-system/
 └── tsconfig.base.json
 ```
 
-There is no committed container definition, infrastructure-as-code directory or deployment manifest. A CI workflow exists, and remote GitHub Actions run 41098761499 passed.
+The repository includes API and web multi-stage Dockerfiles, an internal-only MySQL network, a persistent database volume, a one-shot migration/SQL service, health checks and an Nginx SPA/API/WebSocket proxy. This is a deployment definition, not a verified running deployment. Check the current result in [GitHub Actions](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/workflows/ci.yml).
 
 ---
 
@@ -276,19 +275,26 @@ GET http://localhost:4000/health/ready
 
 The readiness check executes a real database query and counts pending outbox events and active incidents.
 
-The root route `/` of the SPA is currently an empty landing shell. Open <http://localhost:5173/login> directly.
+The root route `/` is the public product landing page; use its console button or open <http://localhost:5173/login> directly.
 
 ---
 
-## Docker Compose status
+## Docker Compose local deployment
 
-**Not implemented in this repository.**
+The Compose definition is for a **local, disposable installation**; it is not evidence of a hosted production deployment. Docker Engine and Compose are required. The Compose file uses MySQL 8.4, a persistent named database volume, a private internal network, a one-shot migration service, health checks and a web proxy. MySQL is not published to the host, and the web service binds to loopback by default. The current host has no Docker Engine, so image builds and startup have not been verified.
 
-A search of the repository finds **no `docker-compose.yml` or equivalent Compose file**. `.env.example` contains a comment describing a hypothetical Compose host named `mysql`, but no service definition is committed. No Docker-based setup is documented here because it could not be verified.
+```powershell
+Copy-Item .env.compose.example .env.compose
+docker compose --env-file .env.compose config
+docker compose --env-file .env.compose up --build -d
+docker compose --env-file .env.compose run --rm migrate npm run db:seed -w @frostguard/api
+```
 
-The Prisma schema header mentions MySQL 8.4 LTS; that is a schema target, not evidence that a Docker/MySQL 8.4 runtime was exercised.
+Open <http://localhost:8080> and sign in with `owner@northline.demo` and `SEED_DEMO_PASSWORD` from `.env.compose` (the local example uses `Frostguard#2026`). The seed creates synthetic demo data and predictable device credentials. It deletes/recreates its two demo tenants; use it only with a fresh, disposable local database. Never run the seed in production.
 
-If you add Compose later, treat it as new infrastructure: pin image versions, keep the database volume out of Git, inject secrets rather than hard-coding them, wait for MySQL readiness before migrations, and document the tested path.
+Stop without deleting data with `docker compose --env-file .env.compose down`. The database volume persists. `docker compose down -v` deletes it and is destructive. The API runs as one process because Socket.IO fan-out, the simulator and the outbox worker are process-local.
+
+For production, use `NODE_ENV=production`, unique high-entropy secrets from a secret manager, an HTTPS public origin, TLS at a trusted reverse proxy and a controlled migration step. Restrict access to the loopback-bound web port. This Compose stack does not configure TLS, managed secrets, backups, cloud network policy, monitoring or restore automation and has not been runtime verified.
 
 ---
 
@@ -361,7 +367,7 @@ Password: Frostguard#2026
 Org slug: northline
 ```
 
-The seed also creates demo devices with predictable development-only keys of the form `fgd_demo_<deviceid>_2026`. The plaintext keys are printed to the seed console only; only SHA-256 digests are stored. These credentials must never be used outside a local demo.
+The seed also creates demo devices with predictable development-only keys of the form `fgd_demo_<deviceid>_2026`. Only SHA-256 digests are stored, and key material is not printed by the seed command. These credentials must never be used outside a local demo.
 
 Re-running the seed deletes and recreates the `northline` and `meridian` tenants, users and their dependent demo data.
 
@@ -391,7 +397,7 @@ npm test
 
 The API test suite uses Vitest and Supertest and exercises the real HTTP surface, real Prisma queries and the real MySQL triggers/procedures.
 
-**Status: 66/66 API/MySQL tests passed** on 2026-10-31 against the disposable `frostguard_test` schema using Vitest 4.1.12. Typecheck, lint, production build and all 3 Playwright Chromium tests passed. Coverage includes tenant isolation, injected transaction rollback, outbox/realtime authorization, CSV export safety, mobile navigation, authenticated route smoke, and OpenAPI/docs route availability. Exact limitations and command results: `docs/audit/RELEASE_CANDIDATE_REPORT.md`.
+**Status: 69/69 API/MySQL tests passed** on 2026-10-31 against the disposable `frostguard_test` schema using Vitest 4.1.12. Typecheck, lint and production build passed before the latest accessibility edits; rerun these gates before treating those edits as verified. Playwright now includes axe-core checks across operational routes and responsive public/dashboard views. API coverage includes injected transaction rollback (including cancellation and shipment event writes) and cancellation/dispatch concurrency. Exact current results and limitations are in `docs/audit/RELEASE_CANDIDATE_REPORT.md`.
 
 On the audit Windows host, the default `tsx` runner initially failed before Vitest startup with Node `uv_os_get_passwd returned ENOMEM`. The same `npm.cmd test` suite was then executed successfully using a temporary process-only Node preload workaround; the preload was removed afterward. This host-specific issue is documented and does not change project source or test configuration.
 
@@ -405,7 +411,7 @@ The suite's global setup:
 
 Therefore the tests require a reachable local MySQL with those root credentials, or a modified `apps/api/vitest.config.mts` / `tests/globalSetup.ts`. The test database is disposable and is reset. Do not point it at a database you care about.
 
-Playwright specs are in `apps/web/e2e/`. On Windows, start the web dev server before `npm run test:e2e`; authenticated tests also require the compiled API on port 4000 connected to seeded `frostguard_test`. CI seeds that disposable database first and starts the compiled API before the browser suite. The full route smoke checks 14 application routes, detail/empty states and mobile keyboard focus. It is not a WCAG conformance or production deployment claim.
+Playwright specs are in `apps/web/e2e/`. On Windows, start the web dev server before `npm run test:e2e`; authenticated tests also require the compiled API on port 4000 connected to seeded `frostguard_test`. CI seeds that disposable database first and starts the compiled API before the browser suite. The suite checks 14 operational routes, available detail/empty states, keyboard focus, and axe-core serious/critical findings for landing at 375x812, 390x844, 768x1024, 1366x768 and 1920x1080; all operational routes at desktop; dashboard at those five viewports; and products at 390x844. This is automated evidence, not a WCAG conformance claim or a screen-reader review.
 
 ---
 
@@ -427,7 +433,7 @@ Implemented controls include:
 - Uniform authentication errors and dummy password verification to reduce account enumeration.
 - Append-only telemetry enforced by a MySQL trigger.
 
-Not claimed: external penetration testing, formal threat-model review, compliance certification, MFA, password reset, encryption at rest/TDE configuration, secret-manager integration, dependency scanning, WAF or production hardening.
+Not claimed: external penetration testing, formal threat-model review, compliance certification, MFA, password reset, encryption at rest/TDE configuration, secret-manager integration, WAF or production hardening. `npm audit` still reports three high findings in the Prisma/deepmerge-ts chain, including with `--omit=dev`; see the dated assessment and release report.
 
 See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md).
 
@@ -446,14 +452,14 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 
 ## Limitations and not-implemented work
 
-- No Docker Compose file and no verified container runtime.
+- Dockerfiles and Compose definition exist; container build/startup remains unverified because the current host lacks a Docker Engine.
 - OpenAPI schema and `/api/v1/docs` route are implemented; there is no generated API client.
 - No MFA, password reset, change-password, email verification or SSO.
 - No outbound email/SMS/push provider.
-- CI workflow includes lockfile dependency advisory classification. Remote run 41098761499 passed on SHA `4237f09`; current branch changes are awaiting a new remote run. No container scanning or SAST configuration.
+- CI workflow includes lockfile dependency advisory classification. Baseline run `41110200375` passed on SHA `42f1ab5`; the completion changes are awaiting a new remote run. No container scanning or SAST configuration.
 - No evidence of an external penetration test or formal security review.
-- Playwright covers landing, dashboard and 14 authenticated routes; complete business-flow E2E and full responsive/accessibility automation remain incomplete.
-- No production deployment manifests, TLS termination, secret manager, backup/restore automation or retention jobs.
+- Playwright covers landing, dashboard and 14 authenticated routes, and axe-core now checks serious/critical findings across these routes and requested viewports; lower-impact findings, broader workflows and the final run remain pending.
+- No hosted production deployment, TLS termination configuration, secret manager, backup/restore automation or retention jobs.
 - No file/object uploads.
 - Audit logs are written transactionally and exposed read-only through the API, but the table itself is not protected against direct privileged updates by a trigger.
 - Socket.IO fan-out and simulator timers are process-local. Multi-instance deployments would need a shared adapter/queue and coordination.
@@ -465,7 +471,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 - Risk scoring is a rule-based heuristic and has not been clinically or regulatorily validated.
 - The public landing page and authenticated dashboard have desktop/mobile Playwright screenshots; other authenticated product workflows have not yet been visually audited end-to-end.
 - `JWT_REFRESH_SECRET` is required but unused because refresh tokens are opaque.
-- Local MySQL 8.0 setup is documented; MySQL 8.4/Docker runtime compatibility is not verified.
+- Local MySQL setup and CI migration checks are documented. Compose syntax parses, but MySQL 8.4/container runtime compatibility remains unverified because the local Docker Engine is unavailable.
 
 ---
 

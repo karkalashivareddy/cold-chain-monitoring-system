@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="40" y1="0" x2="850" y2="1100" gradientUnits="userSpaceOnUse"><stop stop-color="#1a3d50"/><stop offset="1" stop-color="#091522"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#cdf6f4" stop-opacity=".8"/><stop offset="1" stop-color="#3b8298" stop-opacity=".55"/></linearGradient>
+    <radialGradient id="light" cx="0" cy="0" r="1" gradientTransform="matrix(0 641 -396 0 425 392)" gradientUnits="userSpaceOnUse"><stop stop-color="#34cee4" stop-opacity=".2"/><stop offset="1" stop-color="#34cee4" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0v32" stroke="#a6deea" stroke-opacity=".07"/></pattern>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h900v1200H0z"/><path fill="url(#light)" d="M0 0h900v1200H0z"/><path fill="url(#grid)" d="M0 0h900v1200H0z"/>
+  <path d="M102 947h696M158 947V259h584v688" stroke="#8bcfdd" stroke-opacity=".35" stroke-width="5"/>
+  <path d="M158 481h584M158 710h584" stroke="#8bcfdd" stroke-opacity=".22" stroke-width="4"/>
+  <g transform="translate(220 286)">
+    <g><rect x="0" y="92" width="120" height="246" rx="27" fill="url(#glass)" stroke="#c1f5f4" stroke-opacity=".72" stroke-width="3"/><rect x="30" y="44" width="60" height="63" rx="8" fill="#2b6378" stroke="#c1f5f4" stroke-opacity=".7" stroke-width="3"/><path d="M19 236h82" stroke="#baf1f2" stroke-opacity=".4" stroke-width="4"/></g>
+    <g transform="translate(166 53)"><rect x="0" y="92" width="120" height="246" rx="27" fill="url(#glass)" stroke="#c1f5f4" stroke-opacity=".72" stroke-width="3"/><rect x="30" y="44" width="60" height="63" rx="8" fill="#2b6378" stroke="#c1f5f4" stroke-opacity=".7" stroke-width="3"/><path d="M19 236h82" stroke="#baf1f2" stroke-opacity=".4" stroke-width="4"/></g>
+    <g transform="translate(332 3)"><rect x="0" y="92" width="120" height="246" rx="27" fill="url(#glass)" stroke="#c1f5f4" stroke-opacity=".72" stroke-width="3"/><rect x="30" y="44" width="60" height="63" rx="8" fill="#2b6378" stroke="#c1f5f4" stroke-opacity=".7" stroke-width="3"/><path d="M19 236h82" stroke="#baf1f2" stroke-opacity=".4" stroke-width="4"/></g>
+  </g>
+  <path d="M143 1012c119-59 235-52 345 1 95 45 184 40 270-5" stroke="#54dce9" stroke-opacity=".6" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="488" cy="1013" r="8" fill="#a8f5f1"/><circle cx="758" cy="1008" r="8" fill="#a8f5f1"/>
+  <rect x="99" y="112" width="276" height="66" rx="12" fill="#0d2030" fill-opacity=".8" stroke="#75c9d8" stroke-opacity=".27"/>
+  <circle cx="132" cy="145" r="9" fill="#60d8af"/><path d="M160 137h177M160 155h122" stroke="#daf6f7" stroke-opacity=".3" stroke-width="6" stroke-linecap="round"/>
+</svg>
