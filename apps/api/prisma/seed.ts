@@ -115,6 +115,10 @@ async function seedOrganization(params: {
 }
 
 async function main() {
+  if (env.NODE_ENV === "production") {
+    throw new Error("The deterministic demo seed is disabled in production because it deletes and recreates demo tenants.");
+  }
+
   console.log("Seeding FROSTGUARD demonstration dataset…");
   await seedRbac();
 

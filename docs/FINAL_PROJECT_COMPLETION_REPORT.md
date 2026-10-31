@@ -35,7 +35,7 @@ See [feature matrix](audit/FEATURE_COMPLETION_MATRIX.md) for per-feature status 
 - Named architecture/database design, ER, index and transaction documents.
 - Security threat model, controls inventory, test results and final audit records.
 - ESLint flat config and fixes for unused imports/variables; shipment dialog now initializes a default origin when asynchronous warehouse options arrive.
-- Production configuration checks that reject known demo/test placeholders and identical access/refresh JWT secrets, with validation unit tests.
+- Production configuration checks that reject known demo/test placeholders for access-token, device HMAC and seed secrets, with validation unit tests. Refresh tokens are opaque database-backed values and require no JWT signing secret.
 - GitHub Actions CI for npm install, Prisma generation, type check, lint, API/web build, MySQL integration tests and dependency advisory audit.
 - Browser-only Vite source resolution fixes the shared-package runtime export failure while preserving the API CommonJS package output; Playwright smoke passes on dev and production preview.
 - Product and batch temperature-profile references and maintenance-log sensor references are tenant-scoped in write transactions, with MySQL regression coverage for rejected cross-org IDs.
@@ -84,7 +84,7 @@ Authenticated Socket.IO connections are checked against current membership and p
 
 ## 12. Security controls
 
-Argon2 password hashing; JWT access/refresh flow; membership/RBAC; Zod input validation; Helmet/CSP; allowlisted CORS; CSRF marker for cookie writes; request limits; hashed device credentials; rotation/revocation paths; parameterized SQL; audit trail; append-only reading update trigger; production secret guards. TLS, deployment network isolation, least-privilege DB credentials, secret management, and external security review are not verified. See [security audit](FINAL_SECURITY_AUDIT.md).
+Argon2id password hashing; JWT access tokens and opaque rotating refresh tokens; membership/RBAC; Zod input validation; Helmet/CSP; allowlisted CORS; CSRF marker for cookie writes; request limits; hashed device credentials; rotation/revocation paths; parameterized SQL; database-protected append-only audit and telemetry records; production secret guards. TLS, deployment network isolation, least-privilege DB credentials, secret management, and external security review are not verified. See [security audit](FINAL_SECURITY_AUDIT.md).
 
 ## 13. Test results
 

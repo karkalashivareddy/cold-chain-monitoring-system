@@ -288,7 +288,7 @@ The root route `/` is the public product landing page; use its console button or
 
 ## Docker Compose local deployment
 
-The Compose definition is for a **local, disposable installation**; it is not evidence of a hosted production deployment. Docker Engine and Compose are required. The Compose file uses MySQL 8.4, a persistent named database volume, a private internal network, a one-shot migration service, health checks and a web proxy. MySQL is not published to the host, and the web service binds to loopback by default. The current host has no Docker Engine, so image builds and startup have not been verified.
+The Compose definition is for a **local, disposable installation**; it is not evidence of a hosted production deployment. Docker Engine and Compose are required. The Compose file uses MySQL 8.4, a persistent named database volume, a private internal backend network, a one-shot migration service and Nginx. The web container joins the internal backend and a separate routable frontend network so the browser-facing port can be published while MySQL remains private. The API image declares the healthcheck used by Compose startup ordering. The web service binds to loopback by default. The current host has no Docker Engine, so image builds and startup have not been verified.
 
 ```powershell
 Copy-Item .env.compose.example .env.compose
@@ -297,7 +297,7 @@ docker compose --env-file .env.compose up --build -d
 docker compose --env-file .env.compose run --rm migrate npm run db:seed -w @frostguard/api
 ```
 
-Open <http://localhost:8080> and sign in with `owner@northline.demo` and `SEED_DEMO_PASSWORD` from `.env.compose` (the local example uses `Frostguard#2026`). The seed creates synthetic demo data and predictable device credentials. It deletes/recreates its two demo tenants; use it only with a fresh, disposable local database. Never run the seed in production.
+Open <http://localhost:8080> and sign in with `owner@northline.demo` and `SEED_DEMO_PASSWORD` from `.env.compose` (the local example uses `Frostguard#2026`). The seed creates synthetic demo data and predictable device credentials. It deletes/recreates its two demo tenants; use it only with a fresh, disposable local database. The seed now refuses to run when `NODE_ENV=production`.
 
 Stop without deleting data with `docker compose --env-file .env.compose down`. The database volume persists. `docker compose down -v` deletes it and is destructive. The API runs as one process because Socket.IO fan-out, the simulator and the outbox worker are process-local.
 
@@ -403,7 +403,7 @@ npm test
 
 The API test suite uses Vitest and Supertest and exercises the real HTTP surface, real Prisma queries and the real MySQL triggers/procedures.
 
-**Verification for the current main revision (2026-10-31):** Typecheck, lint, production build, API/MySQL suite (13 files / 74 tests), Playwright suite (5 tests), clean five-migration deployment, and SQL control application passed. GitHub Actions run [41166761519](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41166761519) also passed on pushed code commit `ae85f75`. Database tests use disposable `_test` databases on loopback; browser tests use the local API and seeded demo organization. Three high Prisma/deepmerge-ts dependency findings remain; Docker Engine runtime, production map tiles, independent security assessment and hosted deployment remain unverified. See the [release status](docs/audit/FINAL_RELEASE_STATUS.md), [security test results](docs/security/SECURITY_TEST_RESULTS.md), and [screenshot gallery](docs/audit/screenshots/README.md).
+**Verification:** GitHub Actions run [41166761519](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41166761519) passed on code commit `ae85f75` (2026-10-31). For the current local working tree, `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, and the API/MySQL suite (13 files / 74 tests) pass; the suite uses only a loopback database ending in `_test`. Compose syntax parses with the separate web network, but Docker Engine runtime is unavailable here, so containers were not started. Three high Prisma/deepmerge-ts dependency findings remain; production map-tile availability, independent security assessment and hosted deployment remain unverified. See the [release status](docs/audit/FINAL_RELEASE_STATUS.md), [security test results](docs/security/SECURITY_TEST_RESULTS.md), and [screenshot gallery](docs/audit/screenshots/README.md).
 
 On the audit Windows host, the default `tsx` runner initially failed before Vitest startup with Node `uv_os_get_passwd returned ENOMEM`. The same `npm.cmd test` suite was then executed successfully using a temporary process-only Node preload workaround; the preload was removed afterward. This host-specific issue is documented and does not change project source or test configuration.
 

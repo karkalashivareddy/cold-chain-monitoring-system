@@ -6,11 +6,11 @@
 ## Repository and configuration evidence
 
 - The repository has a root `.env.example` and a separate `.env.compose.example` with local-only placeholders; `.gitignore` excludes `.env` and `.env.*` but allows the checked-in templates. No secret value from the local API `.env` was inspected or copied.
-- `apps/api/src/config/env.ts` validates required database/JWT settings, rejects known development/test placeholders in production, requires different access and refresh secrets, and enables secure cookies when `NODE_ENV=production`.
+- `apps/api/src/config/env.ts` validates required database/access-token settings, rejects known development/test placeholders in production, and enables secure cookies when `NODE_ENV=production`. Refresh tokens are opaque random values stored as hashes; there is no refresh-token JWT secret.
 - `apps/api/src/server.ts` starts Socket.IO and the in-process outbox worker and handles SIGINT/SIGTERM by stopping simulations/worker, closing realtime, closing HTTP, and disconnecting Prisma.
 - `apps/api/src/modules/health/health.routes.ts` provides liveness and readiness endpoints. Readiness queries MySQL and reports database latency and aggregate pending-outbox/active-incident counts. Deploy behind a proxy that restricts access to internal operational endpoints if that information is not intended for anonymous callers.
 - The production build and local compiled API/browser smoke were verified in the separate audit record. They do not establish a deployed environment.
-- API and web multi-stage Dockerfiles, `docker-compose.yml`, `.dockerignore`, Nginx proxy configuration and `.env.compose.example` now define a single-instance local stack. `docker compose config` passes. Docker Engine is unavailable (the named pipe is missing), so image builds, container health checks, migration startup and runtime smoke are unverified. See [local Compose deployment](DOCKER_LOCAL.md).
+- API and web multi-stage Dockerfiles, `docker-compose.yml`, `.dockerignore`, Nginx proxy configuration and `.env.compose.example` define a single-instance local stack. Compose attaches web to both the internal backend network and a routable frontend network; the API image declares a healthcheck. Docker Engine is unavailable (the named pipe is missing), so image builds, container health checks, migration startup and runtime smoke are unverified. See [local Compose deployment](DOCKER_LOCAL.md).
 - No hosted deployment, DNS, HTTPS certificate, firewall/network policy, private MySQL boundary, managed secret store, backup/restore drill, or production logging/monitoring integration has been verified.
 
 ## Production gate matrix
@@ -18,7 +18,7 @@
 | Area | Status | Evidence / required work before deploy |
 |---|---|---|
 | Production build | VERIFIED locally | `npm.cmd run build` passes; artifact is not a deployment image |
-| Environment validation | IMPLEMENTED_NOT_VERIFIED for hosted configuration | Production placeholder/reused JWT secret checks exist; generate unique secrets in a managed secret store and validate every required variable in the target environment |
+| Environment validation | IMPLEMENTED_NOT_VERIFIED for hosted configuration | Production placeholder-secret checks exist for access, telemetry HMAC and seed values; generate unique values in a managed secret store and validate every required variable in the target environment |
 | Database migration | PARTIALLY_IMPLEMENTED | Initial Prisma migration and SQL control files applied to a clean disposable schema; define a production migration job, backup/restore, rollback policy, least-privilege account, private network, TLS policy and retention before use |
 | Health checks | IMPLEMENTED_NOT_VERIFIED | `/health/live` and `/health/ready` exist; verify proxy/host semantics and restrict operational metadata as appropriate |
 | Graceful shutdown | IMPLEMENTED_NOT_VERIFIED | Signal handlers are present; no container/orchestrator drain test or shutdown-under-load test was run |
@@ -29,7 +29,7 @@
 | Logging / observability | PARTIALLY_IMPLEMENTED | Pino and health routes exist; connect log collection, redaction review, alerting, metrics, retention and incident runbooks in the target environment |
 | Backups / recovery | NOT_IMPLEMENTED | No automated backup schedule or restore drill evidence |
 | Container image | IMPLEMENTED_NOT_VERIFIED | Multi-stage API/web images, non-root API runtime, health checks and migration target exist. Build and runtime checks are blocked by the missing Docker Engine; image scan and multi-stage signal/migration smoke remain outstanding |
-| Local Compose deployment | IMPLEMENTED_NOT_VERIFIED | Compose syntax passes; MySQL is internal and persistent, API/web are health-gated and migration precedes API. No container was built or started on this host |
+| Local Compose deployment | IMPLEMENTED_NOT_VERIFIED | Compose defines persistent private MySQL, a separate routable web network, an API image healthcheck and migration-before-API ordering. No container was built or started on this host |
 | CI | VERIFIED for completion/report commits | GitHub Actions run `41150310038` passed for code commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea`; documentation follow-up `d1785b4a1ced7da706300a76ba5b38e507953735` passed run `41150748198` on its exact SHA. |
 | Security validation | PARTIALLY_IMPLEMENTED | High development/optional Prisma tooling advisory remains assessed separately; no penetration test, production TLS review, or external assessment occurred |
 | Asset redistribution | PARTIALLY_IMPLEMENTED | Landing/login references original project SVGs; five unknown JPEGs remain unreferenced locally and must be excluded from publication; see asset register |

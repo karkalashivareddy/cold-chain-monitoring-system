@@ -13,7 +13,7 @@ flowchart LR
   Migrate -. completes before startup .-> API
 ```
 
-The `backend` Docker network is internal. MySQL has no host port mapping. The web port binds to loopback and can be placed behind a host-managed TLS reverse proxy. The API is deliberately one process: Socket.IO fan-out, simulation timers and outbox polling are process-local. `/health/ready` is not proxied publicly; `/health/live` is.
+The `backend` Docker network is internal. MySQL has no host port mapping. The web container also joins a routable `frontend` network so Docker can publish its loopback-bound port while Nginx reaches the API over `backend`. The API container's image declares a Docker `HEALTHCHECK`, which Compose uses for web startup ordering. The API is deliberately one process: Socket.IO fan-out, simulation timers and outbox polling are process-local. `/health/ready` is not proxied publicly; `/health/live` is.
 
 ## Start a disposable local demo
 
@@ -62,7 +62,7 @@ Do not restore over the only copy of data. These commands are operational guidan
 
 ## Secret rotation
 
-For local disposable use, update `.env.compose`, recreate the API and migration containers, and rotate any application credentials that were exposed. Changing MySQL initialization variables does not change an existing database user's password; update that database user deliberately before changing `MYSQL_PASSWORD`. Production secrets belong in a managed secret store. Plan rotation for both JWT signing secrets, the telemetry HMAC secret, the MySQL app password and demo/administrative credentials. Access-token secret rotation invalidates active sessions.
+For local disposable use, update `.env.compose`, recreate the API and migration containers, and rotate any application credentials that were exposed. Changing MySQL initialization variables does not change an existing database user's password; update that database user deliberately before changing `MYSQL_PASSWORD`. Production secrets belong in a managed secret store. Plan rotation for the access-token signing secret, the telemetry HMAC secret, the MySQL app password and administrative credentials. Refresh tokens are opaque random values stored as hashes and do not use a JWT signing secret. Access-token secret rotation invalidates active sessions.
 
 The local sample is development mode so cookies work over local HTTP. For a deployed environment, use `NODE_ENV=production`, distinct unpredictable secrets, a real HTTPS public origin, TLS at a trusted edge, and restricted access to the loopback port. Never expose the sample credentials or the internal operational readiness response publicly.
 

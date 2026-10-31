@@ -66,6 +66,7 @@ services:
         condition: service_healthy
     networks:
       - backend
+      - frontend
 
 volumes:
   mysql-data:
@@ -73,3 +74,6 @@ volumes:
 networks:
   backend:
     internal: true
+  # The Nginx web container needs a routable interface for the published
+  # localhost port; it also joins backend so /api and /socket.io can reach API.
+  frontend: {}

@@ -18,8 +18,12 @@ test("public landing page loads across viewports without browser runtime errors"
   const heroArtwork = page.locator(".hero-artwork img");
   await expect(heroArtwork).toBeVisible();
   await expect.poll(() => heroArtwork.evaluate((image) => getComputedStyle(image).animationName)).toBe("fg-hero-drift");
+  await expect.poll(() => page.locator(".hero-stage .aurora").evaluate((node) => getComputedStyle(node).animationName)).toBe("fg-aurora-flow");
+  await expect.poll(() => page.locator(".hero-stage .text-gradient").evaluate((node) => getComputedStyle(node).animationName)).toBe("fg-spectrum");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect.poll(() => heroArtwork.evaluate((image) => getComputedStyle(image).animationName)).toBe("none");
+  await expect.poll(() => page.locator(".hero-stage .aurora").evaluate((node) => getComputedStyle(node).animationName)).toBe("none");
+  await expect.poll(() => page.locator(".hero-stage .text-gradient").evaluate((node) => getComputedStyle(node).animationName)).toBe("none");
   for (const [width, height] of [[375, 812], [390, 844], [768, 1024], [1366, 768], [1920, 1080]] as const) {
     await page.setViewportSize({ width, height });
     const results = await new AxeBuilder({ page })
