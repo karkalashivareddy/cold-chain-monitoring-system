@@ -23,6 +23,7 @@
 
 ## Audits and release evidence
 
+- [Final release status and verification matrix](audit/FINAL_RELEASE_STATUS.md)
 - [Full product reassessment](audit/FULL_PRODUCT_REASSESSMENT.md)
 - [UI/UX gap analysis](audit/UI_UX_GAP_ANALYSIS.md)
 - [Arctic Signal design system](audit/DESIGN_SYSTEM_SPECIFICATION.md)
@@ -36,6 +37,7 @@
 - [Release execution log](audit/RELEASE_EXECUTION_LOG.md)
 - [Product screenshot gallery](audit/screenshots/README.md)
 - [License policy](LICENSE_POLICY.md)
+- [Security reporting policy](../SECURITY.md)
 
 ## Project ownership
 

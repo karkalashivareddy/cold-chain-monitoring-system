@@ -1,6 +1,6 @@
 # Security test results
 
-**Evidence date:** 2026-10-31 (local working tree before final remote CI)\
+**Evidence date:** 2026-10-31\
 **Assessment type:** source review plus automated API/MySQL, Socket.IO and Playwright tests. No penetration test or external security assessment was performed.
 
 ## Executed and passed
@@ -24,7 +24,8 @@
 - Endpoint authorization matrix is route-group level; exhaustive per-handler/export tests and side-channel equivalence are incomplete.
 - No actual multi-process Socket.IO adapter/fanout test. Outbox worker identities are simulated concurrently in one process; crashes, replay after poison events, and a shared broker are unverified.
 - Transaction rollback injection does not cover shipment cancellation/release or uncertain commit acknowledgement.
-- No production TLS, private MySQL boundary, managed secrets, backup/restore or hosted deployment is evidenced. Remote CI for this working-tree revision is pending until it is pushed.
+- GitHub Actions run [41166761519](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41166761519) passed all configured gates on source commit `ae85f75`. This report's documentation update is verified locally; use workflow history to confirm CI for the latest docs commit.
+- No production TLS, private MySQL boundary, managed secrets, backup/restore or hosted deployment is evidenced.
 - Browser route checks include axe-core serious/critical assertions for the documented routes/viewports; an independent screen-reader review and full assistive-technology audit were not performed.
 - Windows test runner requires the documented temporary process preload due to `uv_os_get_passwd returned ENOMEM`; no shim exists in repository or production configuration.
 

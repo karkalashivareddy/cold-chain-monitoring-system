@@ -403,7 +403,7 @@ npm test
 
 The API test suite uses Vitest and Supertest and exercises the real HTTP surface, real Prisma queries and the real MySQL triggers/procedures.
 
-**Local verification for the current working revision (2026-10-31):** Typecheck, lint, production build, API/MySQL suite (13 files / 74 tests), Playwright suite (5 tests), clean five-migration deployment, and SQL control application passed. Database tests use disposable `_test` databases on loopback; browser tests use the local API and seeded demo organization. This working revision still requires remote CI after push. Three high Prisma/deepmerge-ts dependency findings remain; Docker Engine runtime, production map tiles, independent security assessment and hosted deployment remain unverified. See the [security test results](docs/security/SECURITY_TEST_RESULTS.md), [release candidate report](docs/audit/RELEASE_CANDIDATE_REPORT.md), and [release execution log](docs/audit/RELEASE_EXECUTION_LOG.md) for prior scope/evidence.
+**Verification for the current main revision (2026-10-31):** Typecheck, lint, production build, API/MySQL suite (13 files / 74 tests), Playwright suite (5 tests), clean five-migration deployment, and SQL control application passed. GitHub Actions run [41166761519](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41166761519) also passed on pushed code commit `ae85f75`. Database tests use disposable `_test` databases on loopback; browser tests use the local API and seeded demo organization. Three high Prisma/deepmerge-ts dependency findings remain; Docker Engine runtime, production map tiles, independent security assessment and hosted deployment remain unverified. See the [release status](docs/audit/FINAL_RELEASE_STATUS.md), [security test results](docs/security/SECURITY_TEST_RESULTS.md), and [screenshot gallery](docs/audit/screenshots/README.md).
 
 On the audit Windows host, the default `tsx` runner initially failed before Vitest startup with Node `uv_os_get_passwd returned ENOMEM`. The same `npm.cmd test` suite was then executed successfully using a temporary process-only Node preload workaround; the preload was removed afterward. This host-specific issue is documented and does not change project source or test configuration.
 
@@ -493,6 +493,7 @@ FROSTGUARD is an independently developed student software engineering project by
 - [Architecture](docs/architecture/ARCHITECTURE.md)
 - [Database design](docs/DATABASE.md)
 - [Security controls](docs/security/SECURITY_CONTROLS.md)
+- [Security reporting policy](SECURITY.md)
 - [Threat model](docs/security/THREAT_MODEL.md)
 - [API documentation page](http://localhost:4000/api/v1/docs) (after starting the API)
 - [OpenAPI 3.1 JSON](http://localhost:4000/api/v1/openapi.json) (after starting the API)

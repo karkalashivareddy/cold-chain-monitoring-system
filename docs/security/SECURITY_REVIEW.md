@@ -39,7 +39,7 @@ The major upgrade has a substantial compatibility surface: Prisma 7 requires upd
 - https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7
 - https://github.com/advisories/GHSA-ggr8-5vv4-36mx
 
-Vitest 4.1.12 is the current test-runner dependency; Tinypool is no longer present in the dependency tree. The current registry audit lists no Vitest/Tinypool findings. The latest local verification passed typecheck, lint, production build and 74 MySQL integration tests; 5 Playwright tests also passed. Remote CI for this working-tree revision is pending push.
+Vitest 4.1.12 is the current test-runner dependency; Tinypool is no longer present in the dependency tree. The current registry audit lists no Vitest/Tinypool findings. Local verification passed typecheck, lint, production build and 74 MySQL integration tests; 5 Playwright tests also passed. GitHub Actions run [41166761519](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41166761519) passed on pushed source commit `ae85f75`; check workflow history for the latest documentation commit as well.
 
 ## Important implementation controls observed
 
