@@ -17,22 +17,22 @@ import {
 import { format as formatDate } from "date-fns";
 import type { Severity } from "@/lib/types";
 
-const AXIS = "#7f96b0";
-const GRID = "rgba(120,180,240,0.10)";
+const AXIS = "#a7bacb";
+const GRID = "rgba(144,192,220,0.12)";
 
 const tooltipStyle = {
   background: "#0b1929",
-  border: "1px solid #1b334b",
+  border: "1px solid #294256",
   borderRadius: 12,
   fontSize: 11,
-  color: "#e8f3ff",
+  color: "#ecf5fc",
   boxShadow: "0 20px 44px -28px rgba(0,0,0,0.95)",
 } as const;
 
 const severityColor: Record<Severity, string> = {
-  CRITICAL: "#fb7185",
-  WARNING: "#fbbf24",
-  INFO: "#38bdf8",
+  CRITICAL: "#ff7a8b",
+  WARNING: "#f7c970",
+  INFO: "#86cfff",
 };
 
 function timeLabel(value: string): string {
@@ -56,8 +56,8 @@ export function TemperatureTrendChart({
       <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id="tempBand" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.22} />
-            <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
+            <stop offset="0%" stopColor="#70d8f2" stopOpacity={0.22} />
+            <stop offset="100%" stopColor="#70d8f2" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid stroke={GRID} vertical={false} />
@@ -84,8 +84,8 @@ export function TemperatureTrendChart({
           formatter={(value) => [`${Number(value).toFixed(2)} °C`, "Reading"]}
         />
         <Area type="monotone" dataKey="max" stroke="none" fill="url(#tempBand)" name="Max" />
-        <Area type="monotone" dataKey="avg" stroke="#38bdf8" strokeWidth={2} fill="none" name="Average" dot={false} />
-        <Line type="monotone" dataKey="min" stroke="#2dd4bf" strokeWidth={1} strokeDasharray="3 4" dot={false} name="Min" />
+        <Area type="monotone" dataKey="avg" stroke="#70d8f2" strokeWidth={2} fill="none" name="Average" dot={false} />
+        <Line type="monotone" dataKey="min" stroke="#54e1c2" strokeWidth={1} strokeDasharray="3 4" dot={false} name="Min" />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -117,8 +117,8 @@ export function ExcursionBarChart({
           contentStyle={tooltipStyle}
           labelFormatter={(v) => formatDate(new Date(`${v}T00:00:00Z`), "d MMM yyyy")}
         />
-        <Bar dataKey="total" fill="#38bdf8" radius={[4, 4, 0, 0]} name="Excursions" />
-        <Bar dataKey="critical" fill="#fb7185" radius={[4, 4, 0, 0]} name="Critical" />
+        <Bar dataKey="total" fill="#70d8f2" radius={[4, 4, 0, 0]} name="Excursions" />
+        <Bar dataKey="critical" fill="#ff7a8b" radius={[4, 4, 0, 0]} name="Critical" />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -166,7 +166,7 @@ export function SeverityDonut({
 
 export function MiniSparkline({
   values,
-  color = "#38bdf8",
+  color = "#70d8f2",
   height = 42,
 }: {
   values: number[];
@@ -207,8 +207,8 @@ export function WarehouseBars({
           width={120}
         />
         <Tooltip contentStyle={tooltipStyle} />
-        <Bar dataKey="batches" fill="#2dd4bf" radius={[0, 4, 4, 0]} name="Batches" />
-        <Bar dataKey="excursions" fill="#fb7185" radius={[0, 4, 4, 0]} name="Excursions" />
+        <Bar dataKey="batches" fill="#54e1c2" radius={[0, 4, 4, 0]} name="Batches" />
+        <Bar dataKey="excursions" fill="#ff7a8b" radius={[0, 4, 4, 0]} name="Excursions" />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -239,8 +239,8 @@ export function DeliveryChart({
           contentStyle={tooltipStyle}
           labelFormatter={(v) => formatDate(new Date(`${v}-01T00:00:00Z`), "MMMM yyyy")}
         />
-        <Bar dataKey="onTime" stackId="d" fill="#2dd4bf" radius={[0, 0, 0, 0]} name="On time" />
-        <Bar dataKey="delayed" stackId="d" fill="#fbbf24" radius={[4, 4, 0, 0]} name="Delayed" />
+        <Bar dataKey="onTime" stackId="d" fill="#54e1c2" radius={[0, 0, 0, 0]} name="On time" />
+        <Bar dataKey="delayed" stackId="d" fill="#f7c970" radius={[4, 4, 0, 0]} name="Delayed" />
       </BarChart>
     </ResponsiveContainer>
   );
