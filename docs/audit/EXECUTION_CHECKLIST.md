@@ -9,15 +9,15 @@
 
 | Gate | Status | Evidence / remaining work |
 |---|---|---|
-| A — repository preservation | IMPLEMENTED_NOT_VERIFIED | Latest `origin/main` fetched and matched starting SHA. Pre-existing edits and untracked assets identified. Recheck status and staged paths before commit/push. |
-| B — backend and database | PARTIALLY_IMPLEMENTED | MySQL suite 13 files / 69 tests passed on disposable `frostguard_test`; cancellation/dispatch serialization plus cancellation and shipment-event outbox rollback tests pass. Clean migration on final commit remains for CI. |
+| A — repository preservation | VERIFIED | Reviewed completion commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea` was pushed without history rewriting. Unknown JPEGs and four historical root screenshots remain untracked and excluded; no pre-existing assets were modified or staged. |
+| B — backend and database | VERIFIED for tested suite | MySQL suite 13 files / 69 tests and CI clean-schema migration/SQL validation passed on disposable databases. Cancellation/dispatch serialization and cancellation/shipment-event outbox rollback tests pass. |
 | C — frontend workflows and accessibility | PARTIALLY_IMPLEMENTED | Full Playwright 4/4 passes: public landing, seeded dashboard, 14-route/details smoke with axe, and product validation/create/edit/archive. Landing/dashboard five viewport checks and serious/critical axe scans pass; screenshots were visually reviewed. Independent screen-reader review and every route at every viewport remain. |
 | D — security | PARTIALLY_IMPLEMENTED | Tenant and API suites remain in regression coverage. Latest audit reports three high Prisma/deepmerge-ts findings, including `--omit=dev`; documented compatibility mitigation remains. No independent penetration test. |
 | E — telemetry/realtime reliability | PARTIALLY_IMPLEMENTED | Existing outbox tests/evidence retained. Single-process Socket.IO/outbox/simulator limit documented; no cross-process adapter or worker-process recovery proof. |
 | F — local deployment | IMPLEMENTED_NOT_VERIFIED | API/web Dockerfiles, Compose, Nginx proxy, internal MySQL network, volume and health checks added; Compose syntax passes. Docker Engine missing, so no image/runtime/backup-restore verification. |
-| G — QA | PARTIALLY_IMPLEMENTED | Clean `npm ci`, Prisma generation, typecheck, lint, build, MySQL 69/69, Playwright 4/4, Compose syntax and asset allowlist checks pass. Docker image/runtime verification remains blocked by missing local Engine. |
-| H — GitHub | IN_PROGRESS | Starting remote main and run `41110200375` verified. Commit/push is pending; inspect CI for the exact resulting SHA. |
-| I — versioned release | BLOCKED | No release will be created while container runtime validation and final CI are outstanding; the high advisory is assessed but unresolved. Release requires all applicable gates and a truthful decision. |
+| G — QA | PARTIALLY_IMPLEMENTED | Clean `npm ci`, Prisma generation, typecheck, lint, build, MySQL 69/69, Playwright 4/4 and Compose syntax pass. GitHub Actions run `41150310038` passed all configured jobs on `1b0c7571ec9c18019c007ca15d89d5da167dc3ea`. Docker image/runtime verification remains blocked by missing local Engine. |
+| H — GitHub | VERIFIED for completion code commit `1b0c757` | `origin/main` was verified at `1b0c7571ec9c18019c007ca15d89d5da167dc3ea`; run `41150310038` completed successfully on that exact SHA: https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41150310038. The report reconciliation is docs-only and will trigger its own exact-SHA run. |
+| I — versioned release | BLOCKED | No release will be created while container runtime validation, the three high Prisma/deepmerge-ts advisories and independent security review remain unresolved. The final CI run passed, but not all release gates did. |
 
 ## Changes verified locally
 
@@ -29,9 +29,9 @@
 - Product management reuses the shared field-validating dialog. Browser workflow covers validation, create, edit and archive against the actual API.
 - Docker Compose syntax parses. No Docker daemon is available in this workspace.
 
-## Next actions
+## Remaining actions and release decision
 
-1. Review the source, documentation and staged-path diff; keep unknown JPEGs and historical contaminated screenshots unstaged.
-2. Re-run migration/SQL validation in CI's disposable MySQL job on the pushed SHA.
-3. Commit and push without history rewriting; verify remote SHA and CI result.
-4. Do not create a tag/release unless all required gates pass. Container runtime, independent review and the assessed high advisory remain release limitations.
+- This completion commit and its remote CI are verified as above. The Docker Engine is absent, so container build/runtime, container health, proxy operation and backup/restore drill have not been verified.
+- The three high Prisma/deepmerge-ts findings remain unresolved; CI's advisory classifier passed while retaining its documented risk assessment.
+- Independent security review/penetration testing, cross-process Socket.IO verification, comprehensive screen-reader testing and hosted deployment remain outstanding.
+- Do not create a tag/release unless all applicable gates pass. These open gates are genuine release blockers, not claims of production readiness.

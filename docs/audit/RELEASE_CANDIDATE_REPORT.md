@@ -101,4 +101,8 @@ Starting SHA remained `42f1ab5e1c48ef4fa41f7e3b46a9094e70aefb46` on `main`; `ori
 
 ### Release decision
 
-No version tag or GitHub release is prepared. The local Docker engine limitation blocks container runtime verification; a final pushed SHA and its Actions result are still pending. The dependency advisory remains open with documented restricted-tooling mitigation. Cross-process Socket.IO, independent review/penetration test, backup-restore drill and hosted production configuration remain unverified. Do not claim production readiness or a completed release.
+No version tag or GitHub release is prepared. The local Docker engine limitation blocks container runtime verification. The dependency advisory remains open with documented restricted-tooling mitigation. Cross-process Socket.IO, independent review/penetration test, backup-restore drill and hosted production configuration remain unverified. Do not claim production readiness or a completed release.
+
+## Remote validation of completion commit
+
+Commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea` was pushed to `main`; remote `refs/heads/main` matched that SHA. GitHub Actions run [41150310038](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41150310038) completed with **success** on the exact SHA. The workflow passed clean migration/SQL validation, typecheck, lint, build, MySQL integration tests, Chromium browser tests and dependency-advisory classification. The audit still reports three high Prisma/deepmerge-ts findings; CI classifying the advisory successfully does not mean they are fixed. This confirms GitHub validation for this code commit but does not close the Docker runtime or independent security review gates.

@@ -456,9 +456,9 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 - OpenAPI schema and `/api/v1/docs` route are implemented; there is no generated API client.
 - No MFA, password reset, change-password, email verification or SSO.
 - No outbound email/SMS/push provider.
-- CI workflow includes lockfile dependency advisory classification. Baseline run `41110200375` passed on SHA `42f1ab5`; the completion changes are awaiting a new remote run. No container scanning or SAST configuration.
+- CI workflow includes lockfile dependency advisory classification. Completion code commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea` passed run `41150310038`; no container scanning or SAST configuration.
 - No evidence of an external penetration test or formal security review.
-- Playwright covers landing, dashboard and 14 authenticated routes, and axe-core now checks serious/critical findings across these routes and requested viewports; lower-impact findings, broader workflows and the final run remain pending.
+- Playwright covers landing, dashboard and 14 authenticated routes, plus a live product workflow; axe-core checks serious/critical findings for the documented route and viewport scope. Lower-impact findings, broader workflows and screen-reader review remain.
 - No hosted production deployment, TLS termination configuration, secret manager, backup/restore automation or retention jobs.
 - No file/object uploads.
 - Audit logs are written transactionally and exposed read-only through the API, but the table itself is not protected against direct privileged updates by a trigger.
