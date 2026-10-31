@@ -33,7 +33,7 @@
 - **Evidence:** map has no route geometry or historical GPS polyline contract; it only has origin, destination and optional current point.
 - **Impact:** drawing endpoints alone as a route can imply road routing and actual travel path.
 - **Implementation:** line is dashed and labeled “direct geographic connection, not road route”; no interpolated path/progress geometry is generated. Vehicle markers are separate and sourced.
-- **Verification:** copy and browser assertions added; pending browser completion.
+- **Verification:** copy and browser assertions passed in the complete five-test Playwright run; no console exception occurred during selection or viewport resize.
 - **Status:** VERIFIED for the tested workflow; broader route geometry remains unsupported.
 
 ### FG-MAP-04 — Public raster tile services have distinct policies

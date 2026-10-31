@@ -48,7 +48,7 @@ This is a proposed topology, not a verified deployment design. Confirm provider-
 
 ## Latest reassessment — 2026-10-31
 
-The latest fetched baseline is `main` at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`; GitHub Actions run [41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) succeeded on that exact SHA. Local uncommitted work is not represented in this CI result.
+The latest fetched baseline is `main` at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`; GitHub Actions run [41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) succeeded on that exact SHA. Local completion commit `8bee70103d8534e84592835713540cbfd6eb428e` is not represented in this CI result; a final fetch failed because this workspace could not resolve GitHub.
 
 Shipment map coordinates now have a persisted provenance/time contract and no longer use a warehouse origin as a fallback current marker. The current map uses standard OpenStreetMap tiles only for local/demo context, with attribution, no prefetch and browser `strict-origin-when-cross-origin`. The OSM tile policy explicitly provides no SLA; in the current browser workspace the tiles did not load and the UI displayed a degraded-context message. No production provider/key is configured. See [map engineering decision](../audit/MAP_ENGINEERING_DECISION.md).
 

@@ -1,7 +1,7 @@
 ﻿# Feature completion matrix
 
 **Reassessed:** 2026-10-31\
-**Latest reassessed baseline:** main at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`, refreshed from `origin/main` on 2026-10-31. Local delta is still uncommitted and requires a fresh CI run.\
+**Latest reassessed baseline:** main at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`, refreshed from `origin/main` on 2026-10-31. Completion delta is committed locally as `8bee70103d8534e84592835713540cbfd6eb428e`; it requires publication and a fresh exact-SHA CI run.\
 **Status vocabulary:** VERIFIED, IMPLEMENTED_NOT_VERIFIED, PARTIALLY_IMPLEMENTED, NOT_IMPLEMENTED, BLOCKED, NOT_APPLICABLE.\
 **Owner:** Codex for engineering actions in this roadmap. The user authorized the reviewed completion commit; unrelated untracked user assets were preserved and excluded.
 

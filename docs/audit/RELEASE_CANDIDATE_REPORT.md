@@ -111,7 +111,7 @@ The report-only follow-up commit `d1785b4a1ced7da706300a76ba5b38e507953735` was 
 
 ## Latest reassessment and local delta — 2026-10-31
 
-The next live repository audit fetched `main` and confirmed `origin/main` at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`. Latest baseline run [41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) succeeded on that exact SHA. The following source/docs are an uncommitted local delta and are not covered by that run.
+The next live repository audit fetched `main` and confirmed `origin/main` at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`. Latest baseline run [41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) succeeded on that exact SHA. The completion delta is committed locally as `8bee70103d8534e84592835713540cbfd6eb428e` and is not covered by that run. A subsequent fetch attempt failed to resolve `github.com`, so the current remote head could not be rechecked.
 
 ### Verification performed on the local delta
 
@@ -127,7 +127,7 @@ The next live repository audit fetched `main` and confirmed `origin/main` at `7b
 | Screenshot capture | PASS | Current app/API against clean seeded `frostguard_test`; images under `docs/audit/screenshots/release-candidate-20261031-final/`. Screenshots are genuine local application renders with seeded simulation. Map screenshot visibly reports that external basemap tiles were unavailable; coordinate geometry is not presented as geographic context. |
 | Full npm advisory audit | RESIDUAL, exit 1 | Full: 14 total (11 moderate, 3 high, 0 critical). `npm audit --omit=dev`: 3 high / 0 critical, same Prisma 6.19.3 → `@prisma/config` → `deepmerge-ts` path. npm proposes Prisma 7.10.1 major; no unsafe upgrade/override applied. Audits succeeded after escalating registry access. |
 | Docker runtime | BLOCKED | Docker Engine unavailable; no image build/startup/health/backup-restore runtime verification. |
-| Remote CI / final commit | NOT RUN | Local delta has not been committed/pushed; exact final-SHA GitHub run does not yet exist. |
+| Remote CI / final commit | BLOCKED | Local commit `8bee70103d8534e84592835713540cbfd6eb428e` is committed but not pushed; exact-SHA GitHub run does not yet exist. GitHub DNS/transport failed from this workspace. |
 
 ### New product correction
 

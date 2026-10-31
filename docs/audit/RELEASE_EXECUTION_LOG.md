@@ -4,7 +4,7 @@
 **Repository baseline refreshed from remote:** `main` / `origin/main` at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`.
 **Baseline CI:** run [41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) succeeded on that exact SHA.
 **Workspace:** local Windows repository checkout; Codex Cloud was unavailable/not connected.
-**Release state:** no versioned release prepared; local delta has not yet been committed or pushed.
+**Release state:** no versioned release prepared. Verified work is committed locally as `8bee70103d8534e84592835713540cbfd6eb428e`; network failures currently prevent a fresh remote check, push and exact-SHA CI run.
 
 ## Preservation and environment
 
@@ -77,5 +77,9 @@
 ## Remaining gates
 
 1. Inspect every staged file and exclude the preserved unknown images/root screenshots.
-2. Push only after safe local review, then verify remote CI on the exact final SHA.
+2. Push the reviewed local commit after GitHub network access recovers, then verify remote CI on the exact final SHA.
 3. Do not create a version tag/release while Docker runtime, production tile selection, dependency HIGH advisory, independent review and production readiness remain open.
+
+## Publication blocker
+
+The completion code commit is `8bee70103d8534e84592835713540cbfd6eb428e` on local `main`; the report-only follow-up records this publication blocker. The local branch is ahead of the cached `origin/main` ref. A post-commit `git fetch origin main` failed with `Could not resolve host: github.com`; `gh run list` failed with a Windows socket policy denial to `api.github.com`. No remote advancement, push, or CI result for the completion commit can be verified from this environment. The cached `origin/main` ref still points to baseline `7bbf22e4863d5e00b768effe0976d03e1965bf4b`; this is not evidence that the remote remains unchanged.

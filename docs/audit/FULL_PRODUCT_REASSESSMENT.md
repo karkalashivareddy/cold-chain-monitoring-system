@@ -7,7 +7,7 @@
 **Workspace:** local connected Windows checkout; Codex Cloud was not connected.
 **Preservation:** pre-existing `apps/web/public/images/` JPEGs and four `docs/audit/screenshots/*` files were left untouched and are excluded from the changes in this pass.
 
-This review concentrates on the live fleet-map data contract, core application routes and existing evidence. It is not a line-by-line external security assessment or production certification. Local modifications remain uncommitted until release checks and diff review finish.
+This review concentrates on the live fleet-map data contract, core application routes and existing evidence. It is not a line-by-line external security assessment or production certification. The reviewed completion delta is committed locally as `8bee70103d8534e84592835713540cbfd6eb428e`; publication and exact-SHA remote CI remain pending because GitHub DNS/transport is unavailable from this workspace.
 
 ## Findings
 
