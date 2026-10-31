@@ -30,7 +30,7 @@
 | Backups / recovery | NOT_IMPLEMENTED | No automated backup schedule or restore drill evidence |
 | Container image | IMPLEMENTED_NOT_VERIFIED | Multi-stage API/web images, non-root API runtime, health checks and migration target exist. Build and runtime checks are blocked by the missing Docker Engine; image scan and multi-stage signal/migration smoke remain outstanding |
 | Local Compose deployment | IMPLEMENTED_NOT_VERIFIED | Compose defines persistent private MySQL, a separate routable web network, an API image healthcheck and migration-before-API ordering. No container was built or started on this host |
-| CI | VERIFIED for completion/report commits | GitHub Actions run `41150310038` passed for code commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea`; documentation follow-up `d1785b4a1ced7da706300a76ba5b38e507953735` passed run `41150748198` on its exact SHA. |
+| CI | VERIFIED for current code commit | GitHub Actions run `41168654213` passed all configured jobs on `e23dcda0ecdc2941458abcb39d31093fbc38b4b0`. Advisory classification passes while three high Prisma/deepmerge-ts findings remain disclosed. |
 | Security validation | PARTIALLY_IMPLEMENTED | High development/optional Prisma tooling advisory remains assessed separately; no penetration test, production TLS review, or external assessment occurred |
 | Asset redistribution | PARTIALLY_IMPLEMENTED | Landing/login references original project SVGs; five unknown JPEGs remain unreferenced locally and must be excluded from publication; see asset register |
 
