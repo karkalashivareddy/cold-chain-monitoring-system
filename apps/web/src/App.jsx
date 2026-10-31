@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { PERMISSIONS } from "@frostguard/shared";
 import { AppShell, AccessDenied, PermissionGate, RequireAuth } from "@/components/layout/AppShell";
@@ -25,7 +25,7 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Dbms = lazy(() => import("@/pages/Dbms"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
-function gate(permission: string, element: ReactNode) {
+function gate(permission, element) {
   return (
     <PermissionGate permission={permission} fallback={<AccessDenied />}>
       {element}
