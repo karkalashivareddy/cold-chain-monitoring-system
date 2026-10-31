@@ -197,7 +197,7 @@ export default function ShipmentDetailPage() {
     [shipment]
   );
   const current = useMemo(
-    () => (shipment?.currentLat != null && shipment.currentLng != null ? { lat: Number(toNumber(shipment.currentLat)), lng: Number(toNumber(shipment.currentLng)) } : null),
+    () => (shipment && ["SIMULATED", "OPERATOR_REPORTED"].includes(shipment.positionSource) && shipment.currentLat != null && shipment.currentLng != null ? { lat: Number(toNumber(shipment.currentLat)), lng: Number(toNumber(shipment.currentLng)) } : null),
     [shipment]
   );
 
@@ -266,10 +266,11 @@ export default function ShipmentDetailPage() {
         <Panel className="xl:col-span-2">
           <PanelHeader
             title="Route"
-            description="Dashed line is the planned direct route. The blue marker is the last recorded checkpoint."
+            description="Dashed line is a direct geographic connection, not a road route. A marker appears only for an explicitly sourced current position."
             action={<Badge tone="neutral"><MapPin className="size-3" aria-hidden /> OpenStreetMap</Badge>}
           />
           <RouteMap origin={origin} destination={destination} current={current} height={330} />
+          <p className="mt-2 text-xs text-mist">{current ? `${shipment.positionSource === "SIMULATED" ? "Simulated demo position" : "Operator-reported checkpoint"} · ${fmtRelative(shipment.positionUpdatedAt)}` : "Location unavailable · no current position is recorded"}</p>
           <div className="mt-3 grid gap-2 border-t border-line/40 pt-3 text-[11px] text-mist sm:grid-cols-3">
             <div><p className="text-[10px] uppercase tracking-wider text-mist/70">Origin</p><p className="mt-0.5 text-ice">{shipment.originWarehouse?.name ?? "—"}</p><p>{shipment.originWarehouse?.city ?? "—"}</p></div>
             <div><p className="text-[10px] uppercase tracking-wider text-mist/70">Destination</p><p className="mt-0.5 text-ice">{shipment.destinationName}</p><p>{shipment.destinationCity ?? "—"}</p></div>

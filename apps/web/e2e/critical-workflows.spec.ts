@@ -1,5 +1,38 @@
 import { expect, test } from "@playwright/test";
 
+test("fleet map distinguishes shipment endpoints from sourced vehicle positions", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.stack ?? error.message));
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Use demo" }).click();
+  await page.getByRole("button", { name: /enter console/i }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await page.route("https://tile.openstreetmap.org/**", (route) => route.abort());
+  await page.goto("/app/map");
+  await expect(page.getByRole("heading", { name: "Live fleet map" })).toBeVisible();
+  await expect(page.getByText(/direct geographic connection/)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Basemap tiles are unavailable" })).toBeVisible();
+  await expect(page.getByText(/Location unavailable/).first()).toBeVisible();
+
+  const search = page.getByRole("textbox", { name: "Search shipments on map" });
+  await search.fill("SHP-2026-0001");
+  await expect(page.getByRole("button", { name: /SHP-2026-0001/ })).toBeVisible();
+  await expect(page.getByText(/Location unavailable/).first()).toBeVisible();
+  await page.getByLabel("Filter map by excursion or position").selectOption("located");
+  await expect(page.getByText("No matching shipments")).toBeVisible();
+  await page.getByLabel("Filter map by excursion or position").selectOption("");
+  await search.fill("");
+  await page.getByRole("button", { name: /SHP-2026-0002/ }).click();
+  await expect(page.getByText(/Simulated demo position/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open shipment record" })).toHaveAttribute("href", /\/app\/shipments\//);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("heading", { name: "Live fleet map" })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  expect(overflow).toBe(false);
+  expect(pageErrors).toEqual([]);
+});
+
 test("owner can validate, create, edit and archive a product through the API", async ({ page }) => {
   const pageErrors: string[] = [];
   const apiErrors: string[] = [];

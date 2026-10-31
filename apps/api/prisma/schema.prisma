@@ -425,6 +425,8 @@ model Shipment {
   deliveredAt        DateTime?
   currentLat         Decimal?  @db.Decimal(9, 6)
   currentLng         Decimal?  @db.Decimal(9, 6)
+  positionSource     String    @default("UNAVAILABLE") @db.VarChar(24)
+  positionUpdatedAt  DateTime?
   progressPercent    Int       @default(0)
   riskScore          Int       @default(0)
   notes              String?   @db.Text

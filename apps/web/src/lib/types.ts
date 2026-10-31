@@ -299,6 +299,8 @@ export interface Shipment {
   originLng: Numeric | null;
   currentLat: Numeric | null;
   currentLng: Numeric | null;
+  positionSource: "UNAVAILABLE" | "SIMULATED" | "OPERATOR_REPORTED" | "DELIVERY_CONFIRMED";
+  positionUpdatedAt: string | null;
   vehicleId: Id | null;
   driverId: Id | null;
   status: string;
@@ -345,8 +347,11 @@ export interface ShipmentMapPoint {
   code: string;
   status: string;
   origin: { lat: number; lng: number };
+  originName: string;
   destination: { lat: number; lng: number };
   current: { lat: number; lng: number } | null;
+  positionSource: Shipment["positionSource"];
+  positionUpdatedAt: string | null;
   progressPercent: number;
   riskScore: number;
   destinationName: string;

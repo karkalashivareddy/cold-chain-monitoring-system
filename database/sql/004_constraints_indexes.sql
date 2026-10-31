@@ -21,6 +21,10 @@ ALTER TABLE batches ADD CONSTRAINT chk_batch_dates CHECK (expiresAt > manufactur
 -- @statement
 ALTER TABLE shipments ADD CONSTRAINT chk_shipment_progress CHECK (progressPercent >= 0 AND progressPercent <= 100);
 
+-- Only explicitly sourced positions may be drawn as a shipment's current location.
+-- @statement
+ALTER TABLE shipments ADD CONSTRAINT chk_shipment_position_source CHECK (positionSource IN ('UNAVAILABLE', 'SIMULATED', 'OPERATOR_REPORTED', 'DELIVERY_CONFIRMED'));
+
 -- @statement
 ALTER TABLE product_temperature_profiles ADD CONSTRAINT chk_profile_range CHECK (minTemp < maxTemp);
 

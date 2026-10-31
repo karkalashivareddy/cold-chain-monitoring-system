@@ -46,6 +46,14 @@
 
 This is a proposed topology, not a verified deployment design. Confirm provider-specific networking, TLS, migration and backup behavior before implementation. No deployment or spending is authorized by this report.
 
+## Latest reassessment — 2026-10-31
+
+The latest fetched baseline is `main` at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`; GitHub Actions run [41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) succeeded on that exact SHA. Local uncommitted work is not represented in this CI result.
+
+Shipment map coordinates now have a persisted provenance/time contract and no longer use a warehouse origin as a fallback current marker. The current map uses standard OpenStreetMap tiles only for local/demo context, with attribution, no prefetch and browser `strict-origin-when-cross-origin`. The OSM tile policy explicitly provides no SLA; in the current browser workspace the tiles did not load and the UI displayed a degraded-context message. No production provider/key is configured. See [map engineering decision](../audit/MAP_ENGINEERING_DECISION.md).
+
+The local delta's typecheck, lint, production build, 70-test MySQL suite and five-test Playwright suite passed, but the changes have not yet received remote CI on a final SHA. Fresh full and `--omit=dev` npm audits still report three HIGH Prisma/deepmerge-ts findings. Container runtime remains unverified because Docker Engine is unavailable. Thus production status remains **NOT READY**.
+
 ## CI source review
 
 `.github/workflows/ci.yml` provisions MySQL 8.4 and runs `npm ci`, Prisma generation, migration + SQL application, typecheck, lint, build, MySQL tests, Chromium/browser tests and dependency advisory classification. Completion code commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea` passed run `41150310038`; report follow-up `d1785b4a1ced7da706300a76ba5b38e507953735` passed run `41150748198`. `actionlint` was unavailable locally. See [CI validation notes](../development/CI_VALIDATION.md).

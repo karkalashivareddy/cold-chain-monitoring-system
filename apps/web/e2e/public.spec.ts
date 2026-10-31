@@ -4,6 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 test("public landing page loads across viewports without browser runtime errors", async ({ page }, testInfo) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
 
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Every degree.");

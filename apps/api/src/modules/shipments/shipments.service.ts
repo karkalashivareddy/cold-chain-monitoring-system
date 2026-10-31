@@ -151,8 +151,10 @@ export async function createShipment(orgId: string, actorId: string, input: Ship
         destinationLng: input.destinationLng,
         originLat: warehouse.latitude!,
         originLng: warehouse.longitude!,
-        currentLat: warehouse.latitude,
-        currentLng: warehouse.longitude,
+        currentLat: null,
+        currentLng: null,
+        positionSource: "UNAVAILABLE",
+        positionUpdatedAt: null,
         vehicleId: input.vehicleId ?? null,
         driverId: input.driverId ?? null,
         status: "PLANNED",
@@ -228,8 +230,10 @@ export async function dispatchShipment(orgId: string, actorId: string, id: strin
           data: {
             status: "DISPATCHED",
             dispatchedAt: now,
-            currentLat: shipment.originLat,
-            currentLng: shipment.originLng,
+            currentLat: null,
+            currentLng: null,
+            positionSource: "UNAVAILABLE",
+            positionUpdatedAt: null,
             progressPercent: 0,
             events: {
               create: {
@@ -284,6 +288,8 @@ export async function deliverShipment(
         progressPercent: 100,
         currentLat: shipment.destinationLat,
         currentLng: shipment.destinationLng,
+        positionSource: "DELIVERY_CONFIRMED",
+        positionUpdatedAt: now,
         events: {
           create: {
             type: "DELIVERED",
@@ -334,6 +340,8 @@ export async function updatePosition(
       data: {
         currentLat: input.lat,
         currentLng: input.lng,
+        positionSource: "OPERATOR_REPORTED",
+        positionUpdatedAt: new Date(),
         progressPercent: progress,
         status: input.status ?? (shipment.status === "DISPATCHED" ? "IN_TRANSIT" : shipment.status),
         events: {
@@ -429,6 +437,7 @@ export async function getShipmentMap(orgId: string) {
   const shipments = await prisma.shipment.findMany({
     where: { orgId, status: { notIn: ["CANCELLED"] } },
     include: {
+      originWarehouse: { select: { name: true } },
       excursions: { where: { status: "OPEN" }, select: { id: true, severity: true, type: true } },
       sensorAssignments: {
         where: { endedAt: null },
@@ -443,10 +452,13 @@ export async function getShipmentMap(orgId: string) {
     code: s.code,
     status: s.status,
     origin: { lat: Number(s.originLat), lng: Number(s.originLng) },
+    originName: s.originWarehouse.name,
     destination: { lat: Number(s.destinationLat), lng: Number(s.destinationLng) },
-    current: s.currentLat != null && s.currentLng != null
+    current: ["SIMULATED", "OPERATOR_REPORTED"].includes(s.positionSource) && s.currentLat != null && s.currentLng != null
       ? { lat: Number(s.currentLat), lng: Number(s.currentLng) }
       : null,
+    positionSource: s.positionSource,
+    positionUpdatedAt: s.positionUpdatedAt?.toISOString() ?? null,
     progressPercent: s.progressPercent,
     riskScore: s.riskScore,
     destinationName: s.destinationName,

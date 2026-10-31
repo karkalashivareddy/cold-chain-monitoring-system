@@ -13,6 +13,47 @@ beforeAll(async () => {
 });
 
 describe("shipment dispatch and stock reservation", () => {
+  it("never treats a warehouse origin as a current GPS position", async () => {
+    const warehouse = await prisma.warehouse.findFirstOrThrow({ where: { orgId, latitude: { not: null }, longitude: { not: null } } });
+    const batch = await prisma.batch.findFirstOrThrow({
+      where: { orgId, status: { in: ["AVAILABLE", "RESERVED"] }, expiresAt: { gt: new Date() }, remainingQuantity: { gte: 1 } },
+      orderBy: { remainingQuantity: "desc" },
+    });
+    const created = await request(app).post("/api/v1/shipments").set(bearer(token)).send({
+      originWarehouseId: warehouse.id,
+      destinationName: "Position Provenance Test Clinic",
+      destinationLat: 19.08,
+      destinationLng: 72.88,
+      items: [{ batchId: batch.id, quantity: 1 }],
+    });
+    expect(created.status, JSON.stringify(created.body)).toBe(201);
+    expect(created.body.data.currentLat).toBeNull();
+    expect(created.body.data.currentLng).toBeNull();
+    expect(created.body.data.positionSource).toBe("UNAVAILABLE");
+
+    let map = await request(app).get("/api/v1/shipments/map").set(bearer(token));
+    let point = map.body.data.find((shipment: { id: string }) => shipment.id === created.body.data.id);
+    expect(point.current).toBeNull();
+    expect(point.positionSource).toBe("UNAVAILABLE");
+
+    const dispatched = await request(app).post(`/api/v1/shipments/${created.body.data.id}/dispatch`).set(bearer(token));
+    expect(dispatched.status).toBe(200);
+    expect(dispatched.body.data.positionSource).toBe("UNAVAILABLE");
+    map = await request(app).get("/api/v1/shipments/map").set(bearer(token));
+    point = map.body.data.find((shipment: { id: string }) => shipment.id === created.body.data.id);
+    expect(point.current).toBeNull();
+
+    const checkpoint = await request(app).patch(`/api/v1/shipments/${created.body.data.id}/position`).set(bearer(token)).send({ lat: 18.52, lng: 73.86, progressPercent: 25 });
+    expect(checkpoint.status).toBe(200);
+    expect(checkpoint.body.data.positionSource).toBe("OPERATOR_REPORTED");
+    expect(checkpoint.body.data.positionUpdatedAt).toBeTruthy();
+    map = await request(app).get("/api/v1/shipments/map").set(bearer(token));
+    point = map.body.data.find((shipment: { id: string }) => shipment.id === created.body.data.id);
+    expect(point.current).toEqual({ lat: 18.52, lng: 73.86 });
+    expect(point.positionSource).toBe("OPERATOR_REPORTED");
+    expect(point.positionUpdatedAt).toBeTruthy();
+  });
+
   it("dispatches a planned shipment and decrements the batch exactly once", async () => {
     const list = await request(app).get("/api/v1/shipments?search=SHP-2026-0001").set(bearer(token));
     const shipment = list.body.data[0] as { id: string; status: string };

@@ -1,0 +1,3 @@
+ALTER TABLE `shipments`
+  ADD COLUMN `positionSource` VARCHAR(24) NOT NULL DEFAULT 'UNAVAILABLE',
+  ADD COLUMN `positionUpdatedAt` DATETIME(3) NULL;

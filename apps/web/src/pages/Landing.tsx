@@ -66,12 +66,6 @@ const SECURITY = [
   { icon: ClipboardCheck, title: "Append-only audit", copy: "Authentication, membership, telemetry and incident actions are recorded with actor, request ID and IP." },
 ];
 
-const DEMO = {
-  email: "owner@northline.demo",
-  password: "Frostguard#2026",
-  organizationSlug: "northline",
-};
-
 export default function LandingPage() {
   const { status } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -99,6 +93,7 @@ export default function LandingPage() {
             <a href="#traceability" className="transition-colors hover:text-ice">Traceability</a>
             <a href="#security" className="transition-colors hover:text-ice">Security</a>
             <a href="#evidence" className="transition-colors hover:text-ice">Database</a>
+            <a href="#creator" className="transition-colors hover:text-ice">Creator</a>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -239,7 +234,7 @@ export default function LandingPage() {
         {/* Audience strip */}
         <section className="border-y border-white/5 bg-deep/60">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-mist">Designed for regulated cold chains</p>
+              <p className="text-[10px] uppercase tracking-[0.22em] text-mist">Every Degree. Every Handoff. Accounted For.</p>
             <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ice/80">
               <li>Biologics &amp; vaccines</li>
               <li className="hidden text-line sm:block" aria-hidden>|</li>
@@ -528,28 +523,28 @@ export default function LandingPage() {
 
             <div className="panel p-5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-ice">Demo credentials</p>
+                <p className="text-sm font-semibold text-ice">Seeded demonstration environment</p>
                 <Badge tone="violet">Simulated data</Badge>
               </div>
-              <dl className="mt-4 space-y-2 font-mono text-[11px]">
-                <div className="flex items-center justify-between gap-4 border-b border-line/40 pb-2">
-                  <dt className="text-mist">email</dt>
-                  <dd className="truncate text-ice">{DEMO.email}</dd>
-                </div>
-                <div className="flex items-center justify-between gap-4 border-b border-line/40 pb-2">
-                  <dt className="text-mist">password</dt>
-                  <dd className="truncate text-ice">{DEMO.password}</dd>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="text-mist">organization</dt>
-                  <dd className="truncate text-ice">{DEMO.organizationSlug}</dd>
-                </div>
-              </dl>
-              <p className="mt-4 border-t border-line/40 pt-3 text-[10px] leading-relaxed text-mist">
-                Roles available in the demo tenant include owner, manager, operator, auditor and viewer. Use the demo
-                button on the sign-in page to fill the form.
-              </p>
+              <p className="mt-4 text-sm leading-relaxed text-mist">A local seeded dataset includes an owner account and operational records. Use the demo sign-in control on the login page; credentials are not displayed here.</p>
+              <p className="mt-4 border-t border-line/40 pt-3 text-[11px] leading-relaxed text-mist">Seeded telemetry and any seeded shipment positions are simulated. The repository does not represent a live deployment or patient-care system.</p>
             </div>
+          </div>
+        </section>
+
+        <section id="creator" className="scroll-mt-24 border-t border-white/5 bg-deep/40">
+          <div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
+            <div>
+              <p className="eyebrow">Independent student project</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ice">Built by Karkala Shiva Reddy</h2>
+              <p className="mt-2 text-sm text-mist">B.Tech Computer Science and Engineering · KL University · Expected graduation 2029</p>
+              <p className="mt-4 max-w-2xl text-xs leading-relaxed text-mist">FROSTGUARD is a student-built full-stack engineering project exploring cold-chain traceability, tenant-aware operations, IoT telemetry, transactional data workflows and evidence-centered incident handling.</p>
+            </div>
+            <nav className="flex flex-wrap gap-3 text-xs" aria-label="Creator links">
+              <a className="rounded-lg border border-line px-3 py-2 text-ice transition-colors hover:border-cyan/50" href="https://github.com/karkalashivareddy" target="_blank" rel="noreferrer">GitHub <ArrowUpRight className="ml-1 inline size-3" aria-hidden /></a>
+              <a className="rounded-lg border border-line px-3 py-2 text-ice transition-colors hover:border-cyan/50" href="https://linkedin.com/in/shiva-reddy-karkala-1a66b4397/" target="_blank" rel="noreferrer">LinkedIn <ArrowUpRight className="ml-1 inline size-3" aria-hidden /></a>
+              <a className="rounded-lg border border-line px-3 py-2 text-ice transition-colors hover:border-cyan/50" href="https://portfolio-shiva-c677.vercel.app" target="_blank" rel="noreferrer">Portfolio <ArrowUpRight className="ml-1 inline size-3" aria-hidden /></a>
+            </nav>
           </div>
         </section>
       </main>
@@ -567,13 +562,14 @@ export default function LandingPage() {
               <a href="#platform" className="hover:text-ice">Platform</a>
               <a href="#security" className="hover:text-ice">Security</a>
               <a href="#evidence" className="hover:text-ice">Database</a>
+              <a href="#creator" className="hover:text-ice">Creator</a>
               <Link to="/login" className="hover:text-ice">Sign in</Link>
             </nav>
 
           </div>
 
           <div className="flex flex-col gap-2 border-t border-white/5 pt-5 text-[10px] text-mist/60 sm:flex-row sm:items-center sm:justify-between">
-            <p>FROSTGUARD cold-chain monitoring &amp; traceability. Private demonstration build.</p>
+            <p>FROSTGUARD · Every Degree. Every Handoff. Accounted For. · Student engineering project.</p>
             <p>Authorized personnel only · activity is logged · not for clinical decision-making</p>
           </div>
         </div>

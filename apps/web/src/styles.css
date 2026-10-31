@@ -1,18 +1,41 @@
 @import "tailwindcss";
 
 @theme {
-  --color-abyss: #07111f;
-  --color-deep: #0a1626;
-  --color-surface: #0d1b2a;
-  --color-elevated: #12263a;
-  --color-line: #1b334b;
-  --color-ice: #e8f3ff;
-  --color-mist: #93a9c2;
-  --color-cyan: #38bdf8;
-  --color-teal: #2dd4bf;
-  --color-amber: #fbbf24;
-  --color-rose: #fb7185;
-  --color-violet: #a78bfa;
+  --fg-bg: #07111f;
+  --fg-sidebar: #0a1726;
+  --fg-bg-secondary: #0d1b2a;
+  --fg-surface: #14283a;
+  --fg-surface-raised: #193247;
+  --fg-border: #23394d;
+  --fg-primary: #35c6f4;
+  --fg-secondary: #27d3b0;
+  --fg-analytics: #a78bfa;
+  --fg-success: #27d3b0;
+  --fg-warning: #f5b942;
+  --fg-critical: #ff647c;
+  --fg-info: #65bfff;
+  --fg-text: #e8f2fa;
+  --fg-text-secondary: #a9bdcf;
+  --fg-text-muted: #839bb0;
+  --fg-focus: #35c6f4;
+  --fg-glass: rgb(10 23 38 / 0.84);
+  --fg-shadow: 0 24px 64px -36px rgb(0 0 0 / 0.76);
+  --fg-motion-fast: 180ms;
+  --fg-motion-standard: 220ms;
+  --color-abyss: var(--fg-bg);
+  --color-deep: var(--fg-sidebar);
+  --color-surface: var(--fg-bg-secondary);
+  --color-elevated: var(--fg-surface);
+  --color-line: var(--fg-border);
+  --color-ice: var(--fg-text);
+  --color-mist: var(--fg-text-secondary);
+  --color-cyan: var(--fg-primary);
+  --color-teal: var(--fg-secondary);
+  --color-amber: var(--fg-warning);
+  --color-rose: var(--fg-critical);
+  --color-violet: var(--fg-analytics);
+  --color-info: var(--fg-info);
+  --color-success: var(--fg-success);
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, ui-monospace, monospace;
   --radius-4xl: 2rem;
@@ -96,6 +119,20 @@
   border: 1px solid rgb(120 180 240 / 0.1);
   border-radius: 1rem;
 }
+
+.glass-toolbar,
+.glass-panel,
+.glass-popover {
+  background: var(--fg-glass);
+  border: 1px solid rgb(169 189 207 / 0.16);
+  box-shadow: var(--fg-shadow), inset 0 1px 0 rgb(255 255 255 / 0.04);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.glass-toolbar { border-radius: 1rem; }
+.glass-panel { border-radius: 1.25rem; }
+.glass-popover { border-radius: 0.875rem; }
 
 .panel-interactive {
   transition:
@@ -249,6 +286,15 @@
   .panel-interactive:hover {
     transform: none;
   }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Small secondary labels still need readable contrast on the dark surfaces. */
@@ -259,16 +305,12 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Leaflet (dark treatment for the allow-listed OSM tiles)                   */
+/*  Leaflet controls and attributed OSM raster tiles                           */
 /* -------------------------------------------------------------------------- */
 
 .leaflet-container {
   background: #07111f;
   font-family: var(--font-sans);
-}
-
-.leaflet-tile-pane {
-  filter: invert(1) hue-rotate(185deg) brightness(0.72) contrast(1.05) saturate(0.7);
 }
 
 .leaflet-control-attribution {
@@ -298,3 +340,5 @@
 .leaflet-popup-content {
   margin: 12px 14px;
 }
+
+.leaflet-container a.leaflet-popup-close-button { color: var(--fg-text-secondary); }

@@ -135,3 +135,9 @@ Acceptance: no unresolved P0 and no unassessed P1. A blocked remote review/deplo
 | 5 Database and backend correctness | PARTIALLY_IMPLEMENTED | Fresh disposable MySQL migration plus all 34 SQL controls applied; 40 integration tests pass including competing shipments and concurrent incident resolution; transaction rollback and cancellation gaps remain |
 | 6 Dependency audit | PARTIALLY_IMPLEMENTED | Vitest patched to 4.1.12; lockfile audit leaves high findings only in Prisma CLI/config/deepmerge-ts dev tooling; Prisma 7 major remains unperformed |
 | 7–11 | PARTIALLY_IMPLEMENTED | P1 outbox, realtime, full operational UX, accessibility, deployment and independent review remain open; bundle splitting, selected browser QA, reports and security review are documented. Complete remaining workflow and release gates before claiming phase completion. |
+
+## Latest reassessment delta — 2026-10-31
+
+Remote baseline refresh: `main` / `origin/main` at `7bbf22e4863d5e00b768effe0976d03e1965bf4b`; CI run `41151182572` succeeded on that baseline SHA. Local work adds explicit shipment position provenance, removes origin-as-GPS fallback, improves fleet-map search/filter/focus and tile-failure disclosure, applies Arctic Signal semantic tokens/reduced-motion handling, adds creator attribution and screenshots, and adds associated regression tests/audit records. Local typecheck/lint/build, 70 MySQL tests and 5 Playwright tests pass. This local delta has no remote CI evidence yet.
+
+Remaining prioritized release work: push only after staged-file review; verify GitHub Actions on the exact final SHA; assess residual three-high Prisma/deepmerge-ts advisories; execute Docker in an environment with Docker Engine; select/verify a production-appropriate tile provider; continue P0 cross-tenant/transaction lifecycle testing and screen-reader/manual accessibility. No hosted deployment or version tag is prepared.

@@ -38,6 +38,7 @@ export function createApp(): Express {
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: "cross-origin" },
+      referrerPolicy: { policy: "strict-origin-when-cross-origin" },
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],

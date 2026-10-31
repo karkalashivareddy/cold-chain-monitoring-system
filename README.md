@@ -1,6 +1,6 @@
 # FROSTGUARD
 
-**Enterprise cold-chain intelligence, monitoring and traceability platform — _Every Degree Matters._**
+**Cold-chain intelligence, monitoring and traceability — _Every Degree. Every Handoff. Accounted For._**
 
 FROSTGUARD is a multi-tenant reference implementation for temperature-controlled inventory, IoT telemetry, excursion response, shipment execution, analytics and audit evidence. It is a working TypeScript monorepo with a real MySQL persistence layer, not a static mock-up.
 
@@ -50,6 +50,7 @@ FROSTGUARD is a multi-tenant reference implementation for temperature-controlled
 - Persistence-based excursion detection, warning/critical severity, automatic alerts and automatic critical-incident creation.
 - Alert acknowledgement and an incident workflow: `OPEN → ACKNOWLEDGED → INVESTIGATING → RESOLVED → CLOSED`, with notes, assignment, root cause, outcome and audit rows.
 - Shipment planning, dispatch, position updates, delivery and cancellation.
+- Explicit shipment position provenance (`UNAVAILABLE`, `SIMULATED`, `OPERATOR_REPORTED`, `DELIVERY_CONFIRMED`) and last-update timestamp; warehouse origin and delivery confirmation are not treated as current GPS.
 - Concurrency-safe dispatch using a serializable transaction, row locking and the `sp_reserve_batch_stock` stored procedure.
 - Transactional outbox events published to authenticated Socket.IO rooms per organization.
 - Dashboards, risk analytics, warehouse/device/delivery analytics, expiring-batch views and CSV/PDF reports.
@@ -69,7 +70,7 @@ FROSTGUARD is a multi-tenant reference implementation for temperature-controlled
 - Permission-gated routes for dashboard, catalogue, inventory, facilities, devices, shipments, fleet map, incidents, alerts, analytics, audit, settings and DBMS inspection.
 - In-memory access token with single-flight refresh against the httpOnly refresh cookie.
 - React Query caches invalidated by Socket.IO events.
-- Leaflet/OpenStreetMap fleet map. Basemap tiles are fetched from OpenStreetMap.
+- Leaflet/OpenStreetMap fleet map. It draws only source-backed vehicle positions; direct endpoint connections are labeled as geographic lines, not road routes. OpenStreetMap raster tiles are a development/demo default, require attribution, and do not provide a production SLA.
 - Explicit **Simulated** badges wherever seeded or simulated telemetry is displayed.
 
 The application is browser-first. `POST /api/v1/telemetry/readings` is the device-facing endpoint and uses a device API key rather than a user session.
@@ -85,15 +86,25 @@ These points are intentionally explicit:
 - **No password-reset, change-password, email-verification or MFA flow.**
 - **No email/SMS/push delivery.** `notification_logs` rows are in-app records only.
 - **No external object storage or document upload.** CSV/PDF reports are generated on demand.
-- **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; run 41098761499 on commit 4237f09 passed the configured workflow.
+- **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; the latest baseline run before this worktree was run 41151182572 on `7bbf22e4863d5e00b768effe0976d03e1965bf4b`.
 - **No external penetration test, threat-model validation or compliance audit** is evidenced.
 - **Playwright coverage includes the public landing page, a seeded live dashboard, and authenticated route smoke across 14 operational routes.** The route smoke does not cover every control or full business workflow.
-- **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency classification; remote run 41098761499 passed on commit 4237f09.
+- **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency classification; latest baseline success: [run 41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) on commit `7bbf22e4863d5e00b768effe0976d03e1965bf4b`. Local changes still require a new remote CI run.
 - **No production deployment, TLS termination, or executed backup/restore drill** is evidenced. Local Nginx proxy and backup instructions are documented; container runtime remains unverified.
-- The public landing page and 14 authenticated routes were exercised with Playwright; landing/dashboard screenshots were inspected at desktop and mobile sizes. Broader end-to-end business workflows and accessibility audits remain incomplete.
+- Public landing, dashboard, 14 authenticated routes and product workflow have prior Playwright evidence. Current local work adds fleet-map provenance/filter/mobile coverage; see the release execution log for current run status. Screenshots from the latest capture are linked in the screenshot gallery below.
 - Production use would require validation, monitoring, backup/restore, retention, secret management and regulatory review. None of those are claimed here.
 
 ---
+
+## Product screenshots
+
+Screenshots are captured from the local app against the seeded, simulated demo tenant. They are evidence of the interface, not a hosted service or physical telemetry.
+
+| Landing | Dashboard | Fleet map |
+|---|---|---|
+| ![FROSTGUARD landing page](docs/audit/screenshots/release-candidate-20261031-final/landing-desktop-1366x768.png) | ![FROSTGUARD dashboard](docs/audit/screenshots/release-candidate-20261031-final/dashboard-desktop-1366x768.png) | ![FROSTGUARD fleet map](docs/audit/screenshots/release-candidate-20261031-final/fleet-map-desktop-1366x768.png) |
+
+Mobile views: [dashboard](docs/audit/screenshots/release-candidate-20261031-final/dashboard-mobile-390x844.png) · [fleet map](docs/audit/screenshots/release-candidate-20261031-final/fleet-map-mobile-390x844.png). Additional views: [products](docs/audit/screenshots/release-candidate-20261031-final/products-desktop-1366x768.png), [shipment detail](docs/audit/screenshots/release-candidate-20261031-final/shipment-detail-desktop-1366x768.png), [incidents](docs/audit/screenshots/release-candidate-20261031-final/incidents-desktop-1366x768.png) and [analytics](docs/audit/screenshots/release-candidate-20261031-final/analytics-desktop-1366x768.png).
 
 ## Architecture
 
@@ -129,7 +140,7 @@ These points are intentionally explicit:
 │ unique/idempotency keys · explicit indexes · UTC timestamps            │
 └────────────────────────────────────────────────────────────────────────┘
 
-External: OpenStreetMap raster tiles used by the fleet map.
+External: OpenStreetMap standard raster tiles for local/demo map context; see [provider limitations](docs/audit/MAP_ENGINEERING_DECISION.md).
 Seed dataset / simulator ──► same telemetry ingestion path ──► isSimulated=true
 ```
 
@@ -397,7 +408,7 @@ npm test
 
 The API test suite uses Vitest and Supertest and exercises the real HTTP surface, real Prisma queries and the real MySQL triggers/procedures.
 
-**Status: 69/69 API/MySQL tests passed** on 2026-10-31 against the disposable `frostguard_test` schema using Vitest 4.1.12. Typecheck, lint and production build passed before the latest accessibility edits; rerun these gates before treating those edits as verified. Playwright now includes axe-core checks across operational routes and responsive public/dashboard views. API coverage includes injected transaction rollback (including cancellation and shipment event writes) and cancellation/dispatch concurrency. Exact current results and limitations are in `docs/audit/RELEASE_CANDIDATE_REPORT.md`.
+**Status for this local worktree:** Typecheck, lint, production build, API/MySQL suite (13 files / 70 tests) and Playwright suite (5 tests) passed on 2026-10-31. The database tests use only disposable `frostguard_test`; browser tests use the real local API and seeded demo organization. Fleet map regression includes source provenance, selection/filter behavior, forced tile failure disclosure and mobile overflow. The local delta is not yet pushed and has no remote CI run. Exact results and release limitations are in `docs/audit/RELEASE_CANDIDATE_REPORT.md` and `docs/audit/RELEASE_EXECUTION_LOG.md`.
 
 On the audit Windows host, the default `tsx` runner initially failed before Vitest startup with Node `uv_os_get_passwd returned ENOMEM`. The same `npm.cmd test` suite was then executed successfully using a temporary process-only Node preload workaround; the preload was removed afterward. This host-specific issue is documented and does not change project source or test configuration.
 
@@ -456,7 +467,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 - OpenAPI schema and `/api/v1/docs` route are implemented; there is no generated API client.
 - No MFA, password reset, change-password, email verification or SSO.
 - No outbound email/SMS/push provider.
-- CI workflow includes lockfile dependency advisory classification. Completion code commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea` passed run `41150310038`; no container scanning or SAST configuration.
+- CI workflow includes lockfile dependency advisory classification. Latest remote baseline before the current unpushed delta is [run 41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) on `7bbf22e4863d5e00b768effe0976d03e1965bf4b`; no container scanning or SAST configuration.
 - No evidence of an external penetration test or formal security review.
 - Playwright covers landing, dashboard and 14 authenticated routes, plus a live product workflow; axe-core checks serious/critical findings for the documented route and viewport scope. Lower-impact findings, broader workflows and screen-reader review remain.
 - No hosted production deployment, TLS termination configuration, secret manager, backup/restore automation or retention jobs.
@@ -475,6 +486,14 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 
 ---
 
+## Creator
+
+FROSTGUARD is an independently developed student software engineering project by **Karkala Shiva Reddy**, pursuing a **B.Tech in Computer Science and Engineering at KL University** (expected graduation: 2029). The project demonstrates full-stack development, tenant-aware authorization, MySQL transaction design, telemetry workflows, testing and operational UI design. It is a learning and reference project, not a deployed commercial service.
+
+- [GitHub](https://github.com/karkalashivareddy)
+- [LinkedIn](https://linkedin.com/in/shiva-reddy-karkala-1a66b4397/)
+- [Portfolio](https://portfolio-shiva-c677.vercel.app)
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
@@ -484,6 +503,9 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 - [API documentation page](http://localhost:4000/api/v1/docs) (after starting the API)
 - [OpenAPI 3.1 JSON](http://localhost:4000/api/v1/openapi.json) (after starting the API)
 - [Research notes and design rationale](docs/RESEARCH.md)
+- [Documentation index](docs/README.md)
+- [Current product reassessment and release execution](docs/audit/FULL_PRODUCT_REASSESSMENT.md)
+- [Map engineering decision](docs/audit/MAP_ENGINEERING_DECISION.md)
 
 ---
 
