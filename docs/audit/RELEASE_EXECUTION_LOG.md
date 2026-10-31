@@ -83,3 +83,9 @@
 ## Publication blocker
 
 The completion code commit is `8bee70103d8534e84592835713540cbfd6eb428e` on local `main`; the report-only follow-up records this publication blocker. The local branch is ahead of the cached `origin/main` ref. A post-commit `git fetch origin main` failed with `Could not resolve host: github.com`; `gh run list` failed with a Windows socket policy denial to `api.github.com`. No remote advancement, push, or CI result for the completion commit can be verified from this environment. The cached `origin/main` ref still points to baseline `7bbf22e4863d5e00b768effe0976d03e1965bf4b`; this is not evidence that the remote remains unchanged.
+
+## Remote status refresh — 2026-10-31
+
+A subsequent authenticated GitHub Actions query returned the current remote `main` run and confirmed commit `83f36e5ee103fef9a5a2fdf2ab2f345bb8ae6f86` (this log's parent commit) is on `main`. Workflow run [41160988479](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41160988479) completed with **success** on that exact SHA. This supersedes the earlier network-blocked publication note above for that commit. The successful workflow includes typecheck, lint, build, MySQL integration tests, browser tests and advisory classification; it does not resolve the three high Prisma/deepmerge-ts findings. Docker runtime, a production map provider, independent security review and hosted production deployment remain unverified. No versioned release is claimed.
+
+The README and documentation index were then corrected to match the queried CI status, public repository/license policy and actual documentation paths. Full-page screenshots now have a linked gallery; untracked user files remain outside these changes. Any follow-up commit containing these documentation corrections still requires its own exact-SHA CI run before it can be reported as CI-verified.

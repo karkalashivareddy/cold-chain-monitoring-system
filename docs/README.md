@@ -3,17 +3,17 @@
 ## Start here
 
 - [Project README](../README.md) — features, architecture, setup, tests, security and limitations.
-- [Local environment setup](development/LOCAL_SETUP.md)
-- [Testing instructions](development/TESTING.md)
+- [Test environment and setup notes](development/TEST_ENVIRONMENT.md)
+- [Testing instructions](../README.md#tests)
 - [API OpenAPI documentation](http://localhost:4000/api/v1/docs) — available when running locally.
 
 ## Architecture and data
 
-- [Architecture](ARCHITECTURE.md)
+- [Architecture](architecture/ARCHITECTURE.md)
 - [Database design](DATABASE.md)
-- [Security controls](SECURITY.md)
-- [Threat model](THREAT-MODEL.md)
-- [Research and domain notes](RESEARCH.md)
+- [Security controls](security/SECURITY_CONTROLS.md)
+- [Threat model](security/THREAT_MODEL.md)
+- [Research and domain notes](research/DOMAIN_RESEARCH.md)
 
 ## Deployment
 
@@ -30,10 +30,12 @@
 - [Implementation roadmap](audit/IMPLEMENTATION_ROADMAP.md)
 - [Feature completion matrix](audit/FEATURE_COMPLETION_MATRIX.md)
 - [Technical debt and risk register](audit/TECHNICAL_DEBT.md)
-- [Accessibility audit](audit/ACCESSIBILITY_AUDIT.md)
-- [Performance audit](audit/PERFORMANCE_AUDIT.md)
+- [Accessibility and route visual audit](audit/FULL_ROUTE_ACCESSIBILITY_VISUAL_AUDIT.md)
+- [Performance audit](FINAL_PERFORMANCE_AUDIT.md)
 - [Release candidate report](audit/RELEASE_CANDIDATE_REPORT.md)
 - [Release execution log](audit/RELEASE_EXECUTION_LOG.md)
+- [Product screenshot gallery](audit/screenshots/README.md)
+- [License policy](LICENSE_POLICY.md)
 
 ## Project ownership
 

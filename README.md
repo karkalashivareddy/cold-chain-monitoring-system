@@ -62,7 +62,7 @@ FROSTGUARD is a multi-tenant reference implementation for temperature-controlled
 - MySQL/InnoDB schema with 31 Prisma models, explicit decimal precision, UTC timestamps, foreign keys, unique constraints and indexes.
 - Five reporting views, four integrity triggers, two stored procedures and nine `CHECK` constraints applied from `database/sql/`.
 - Append-only telemetry enforced in the database by a trigger.
-- Immutable-by-workflow audit rows written inside the same transaction as the business change. There is no database trigger preventing privileged direct updates to `audit_logs`; see [SECURITY.md](docs/SECURITY.md).
+- Immutable-by-workflow audit rows written inside the same transaction as the business change. There is no database trigger preventing privileged direct updates to `audit_logs`; see [security controls](docs/security/SECURITY_CONTROLS.md).
 
 ### Web application
 
@@ -86,25 +86,21 @@ These points are intentionally explicit:
 - **No password-reset, change-password, email-verification or MFA flow.**
 - **No email/SMS/push delivery.** `notification_logs` rows are in-app records only.
 - **No external object storage or document upload.** CSV/PDF reports are generated on demand.
-- **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; the latest baseline run before this worktree was run 41151182572 on `7bbf22e4863d5e00b768effe0976d03e1965bf4b`.
+- **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; the latest verified run for `main` is [41160988479](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41160988479), and three high Prisma/deepmerge-ts findings remain.
 - **No external penetration test, threat-model validation or compliance audit** is evidenced.
 - **Playwright coverage includes the public landing page, a seeded live dashboard, and authenticated route smoke across 14 operational routes.** The route smoke does not cover every control or full business workflow.
-- **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency classification; latest baseline success: [run 41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) on commit `7bbf22e4863d5e00b768effe0976d03e1965bf4b`. Local changes still require a new remote CI run.
+- **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency-advisory classification. The current `main` commit `83f36e5ee103fef9a5a2fdf2ab2f345bb8ae6f86` passed [run 41160988479](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41160988479). The workflow classifies known advisories; that does not mean the three high Prisma/deepmerge-ts findings are resolved.
 - **No production deployment, TLS termination, or executed backup/restore drill** is evidenced. Local Nginx proxy and backup instructions are documented; container runtime remains unverified.
-- Public landing, dashboard, 14 authenticated routes and product workflow have prior Playwright evidence. Current local work adds fleet-map provenance/filter/mobile coverage; see the release execution log for current run status. Screenshots from the latest capture are linked in the screenshot gallery below.
+- Public landing, dashboard, 14 authenticated routes and product workflow have Playwright evidence. Fleet-map tests cover provenance, filters, selection, tile-failure disclosure and mobile overflow; see the release execution log for scope. Captured screens are listed in the screenshot gallery below.
 - Production use would require validation, monitoring, backup/restore, retention, secret management and regulatory review. None of those are claimed here.
 
 ---
 
 ## Product screenshots
 
-Screenshots are captured from the local app against the seeded, simulated demo tenant. They are evidence of the interface, not a hosted service or physical telemetry.
+Captured from the local app against the seeded demo tenant. Seeded readings and positions are simulated; screenshots show the interface and local test data, not a hosted service or physical telemetry. [Open the full screenshot gallery](docs/audit/screenshots/README.md) for the landing page, operational dashboard, fleet map and responsive views.
 
-| Landing | Dashboard | Fleet map |
-|---|---|---|
-| ![FROSTGUARD landing page](docs/audit/screenshots/release-candidate-20261031-final/landing-desktop-1366x768.png) | ![FROSTGUARD dashboard](docs/audit/screenshots/release-candidate-20261031-final/dashboard-desktop-1366x768.png) | ![FROSTGUARD fleet map](docs/audit/screenshots/release-candidate-20261031-final/fleet-map-desktop-1366x768.png) |
-
-Mobile views: [dashboard](docs/audit/screenshots/release-candidate-20261031-final/dashboard-mobile-390x844.png) · [fleet map](docs/audit/screenshots/release-candidate-20261031-final/fleet-map-mobile-390x844.png). Additional views: [products](docs/audit/screenshots/release-candidate-20261031-final/products-desktop-1366x768.png), [shipment detail](docs/audit/screenshots/release-candidate-20261031-final/shipment-detail-desktop-1366x768.png), [incidents](docs/audit/screenshots/release-candidate-20261031-final/incidents-desktop-1366x768.png) and [analytics](docs/audit/screenshots/release-candidate-20261031-final/analytics-desktop-1366x768.png).
+![FROSTGUARD operational dashboard, captured at a 1366 × 768 browser viewport against the seeded demo tenant](docs/audit/screenshots/release-candidate-20261031-final/dashboard-desktop-1366x768.png)
 
 ## Architecture
 
@@ -408,7 +404,7 @@ npm test
 
 The API test suite uses Vitest and Supertest and exercises the real HTTP surface, real Prisma queries and the real MySQL triggers/procedures.
 
-**Status for this local worktree:** Typecheck, lint, production build, API/MySQL suite (13 files / 70 tests) and Playwright suite (5 tests) passed on 2026-10-31. The database tests use only disposable `frostguard_test`; browser tests use the real local API and seeded demo organization. Fleet map regression includes source provenance, selection/filter behavior, forced tile failure disclosure and mobile overflow. Local commit `8bee70103d8534e84592835713540cbfd6eb428e` is not yet pushed and has no remote CI run; GitHub DNS/transport is currently blocked from this workspace. Exact results and release limitations are in `docs/audit/RELEASE_CANDIDATE_REPORT.md` and `docs/audit/RELEASE_EXECUTION_LOG.md`.
+**Verified status for `main` at `83f36e5ee103fef9a5a2fdf2ab2f345bb8ae6f86`:** Typecheck, lint, production build, API/MySQL suite (13 files / 70 tests), Playwright suite (5 tests), and GitHub Actions run [41160988479](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41160988479) passed on 2026-10-31. Database tests use only disposable `frostguard_test`; browser tests use the local API and seeded demo organization. Fleet map regression covers position provenance, selection/filter behavior, tile-failure disclosure and mobile overflow. Three high Prisma/deepmerge-ts dependency findings remain; Docker runtime, production map tiles, independent security assessment and hosted deployment remain unverified. See the [release candidate report](docs/audit/RELEASE_CANDIDATE_REPORT.md) and [release execution log](docs/audit/RELEASE_EXECUTION_LOG.md) for evidence and scope.
 
 On the audit Windows host, the default `tsx` runner initially failed before Vitest startup with Node `uv_os_get_passwd returned ENOMEM`. The same `npm.cmd test` suite was then executed successfully using a temporary process-only Node preload workaround; the preload was removed afterward. This host-specific issue is documented and does not change project source or test configuration.
 
@@ -446,7 +442,7 @@ Implemented controls include:
 
 Not claimed: external penetration testing, formal threat-model review, compliance certification, MFA, password reset, encryption at rest/TDE configuration, secret-manager integration, WAF or production hardening. `npm audit` still reports three high findings in the Prisma/deepmerge-ts chain, including with `--omit=dev`; see the dated assessment and release report.
 
-See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md).
+See [security controls](docs/security/SECURITY_CONTROLS.md) and the [threat model](docs/security/THREAT_MODEL.md).
 
 ---
 
@@ -467,7 +463,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 - OpenAPI schema and `/api/v1/docs` route are implemented; there is no generated API client.
 - No MFA, password reset, change-password, email verification or SSO.
 - No outbound email/SMS/push provider.
-- CI workflow includes lockfile dependency advisory classification. Latest remote baseline before the current unpushed delta is [run 41151182572](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41151182572) on `7bbf22e4863d5e00b768effe0976d03e1965bf4b`; no container scanning or SAST configuration.
+- Latest verified `main` run is [41160988479](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41160988479) on `83f36e5ee103fef9a5a2fdf2ab2f345bb8ae6f86`; three high dependency advisories remain, and no container scanning or SAST configuration is present.
 - No evidence of an external penetration test or formal security review.
 - Playwright covers landing, dashboard and 14 authenticated routes, plus a live product workflow; axe-core checks serious/critical findings for the documented route and viewport scope. Lower-impact findings, broader workflows and screen-reader review remain.
 - No hosted production deployment, TLS termination configuration, secret manager, backup/restore automation or retention jobs.
@@ -480,7 +476,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-
 - Report queries are bounded (for example, temperature CSV caps at 50,000 rows; telemetry series ranges cap at 90 days), but there is no asynchronous large-report pipeline.
 - Data retention and legal hold are not implemented.
 - Risk scoring is a rule-based heuristic and has not been clinically or regulatorily validated.
-- The public landing page and authenticated dashboard have desktop/mobile Playwright screenshots; other authenticated product workflows have not yet been visually audited end-to-end.
+- Landing, dashboard, fleet map, products, shipment detail, incidents and analytics have captured screenshots in the [gallery](docs/audit/screenshots/README.md). Automated route checks and screenshots do not establish full WCAG conformance or cover every workflow at every viewport.
 - `JWT_REFRESH_SECRET` is required but unused because refresh tokens are opaque.
 - Local MySQL setup and CI migration checks are documented. Compose syntax parses, but MySQL 8.4/container runtime compatibility remains unverified because the local Docker Engine is unavailable.
 
@@ -496,13 +492,13 @@ FROSTGUARD is an independently developed student software engineering project by
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md)
+- [Architecture](docs/architecture/ARCHITECTURE.md)
 - [Database design](docs/DATABASE.md)
-- [Security controls](docs/SECURITY.md)
-- [Threat model](docs/THREAT-MODEL.md)
+- [Security controls](docs/security/SECURITY_CONTROLS.md)
+- [Threat model](docs/security/THREAT_MODEL.md)
 - [API documentation page](http://localhost:4000/api/v1/docs) (after starting the API)
 - [OpenAPI 3.1 JSON](http://localhost:4000/api/v1/openapi.json) (after starting the API)
-- [Research notes and design rationale](docs/RESEARCH.md)
+- [Research notes and design rationale](docs/research/DOMAIN_RESEARCH.md)
 - [Documentation index](docs/README.md)
 - [Current product reassessment and release execution](docs/audit/FULL_PRODUCT_REASSESSMENT.md)
 - [Map engineering decision](docs/audit/MAP_ENGINEERING_DECISION.md)
@@ -511,4 +507,4 @@ FROSTGUARD is an independently developed student software engineering project by
 
 ## License
 
-**UNLICENSED.** This repository is private and no license is granted for redistribution or commercial use. See the root `package.json` (`"license": "UNLICENSED"`).
+**UNLICENSED.** This public repository does not grant permission to redistribute or use the software commercially. See the root `package.json` (`"license": "UNLICENSED"`) and [LICENSE_POLICY.md](docs/LICENSE_POLICY.md). No open-source license is asserted.
