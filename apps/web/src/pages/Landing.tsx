@@ -144,24 +144,22 @@ export default function LandingPage() {
 
       <main id="main">
         {/* Hero */}
-        <section className="relative isolate overflow-hidden pt-16">
-          <img
-            src="/illustrations/cold-room.svg"
-            alt="Stainless-steel racks inside a temperature-controlled cold storage room"
-            className="absolute inset-0 -z-20 size-full object-cover"
-            fetchPriority="high"
-          />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-abyss/80 via-abyss/92 to-abyss" aria-hidden />
-          <div className="absolute inset-0 -z-10 aurora opacity-90" aria-hidden />
-          <div className="absolute inset-0 -z-10 grid-field opacity-30" aria-hidden />
-          <div className="pointer-events-none absolute inset-x-0 top-16 -z-10 h-px overflow-hidden" aria-hidden>
+        <section className="hero-stage relative isolate overflow-hidden pt-16">
+          <div className="hero-artwork" aria-hidden="true">
+            <img src="/illustrations/cold-room.svg" alt="" fetchPriority="high" />
+            <span className="hero-scan-beam" />
+          </div>
+          <div className="hero-shade absolute inset-0 -z-10" aria-hidden="true" />
+          <div className="absolute inset-0 -z-10 aurora opacity-90" aria-hidden="true" />
+          <div className="absolute inset-0 -z-10 grid-field opacity-30" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-x-0 top-16 -z-10 h-px overflow-hidden" aria-hidden="true">
             <span className="animate-sweep block h-px w-1/3 bg-gradient-to-r from-transparent via-cyan/70 to-transparent" />
           </div>
 
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:pt-24 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:pb-28 lg:pt-28">
             <div className="animate-rise">
               <p className="eyebrow">Cold-chain intelligence · traceability · response</p>
-              <h1 className="mt-5 text-4xl font-semibold leading-[1.05] tracking-tight text-ice sm:text-5xl xl:text-6xl">
+              <h1 className="mt-5 text-[clamp(2.8rem,5.1vw,5rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-ice">
                 Every degree.
                 <br />
                 Every handoff.
@@ -193,8 +191,12 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            <div className="animate-rise lg:justify-self-end" style={{ animationDelay: "140ms" }}>
-              <div className="panel relative w-full max-w-md p-5">
+            <div className="hero-console animate-rise lg:justify-self-end" style={{ animationDelay: "140ms" }}>
+              <div className="hero-scene-caption" aria-hidden="true">
+                <span><span className="hero-signal-node" /> ARCHITECTURE VIEW</span>
+                <span>01 — EVENT PATH</span>
+              </div>
+              <div className="panel hero-data-card relative w-full max-w-md p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.2em] text-mist">Reference data path</p>

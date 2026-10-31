@@ -4,9 +4,12 @@ These full-page PNG captures were rendered from the local application at the sta
 
 The desktop captures use a **1366 × 768 viewport**. Mobile captures use **390 × 844**. Click a link to open the original-size image.
 
+The landing-page captures below were refreshed after the cinematic hero update. They use the reduced-motion preference, which keeps the scene still for review; the page motion is separately checked with and without that preference.
+
 ## Public experience
 
-- [Landing page — desktop](release-candidate-20261031-final/landing-desktop-1366x768.png)
+- [Landing page — desktop](release-candidate-20261031-cinematic/landing-desktop-1366x768.png)
+- [Landing page — mobile](release-candidate-20261031-cinematic/landing-mobile-390x844.png)
 
 ## Operations console
 

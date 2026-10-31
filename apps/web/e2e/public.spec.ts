@@ -4,11 +4,17 @@ import AxeBuilder from "@axe-core/playwright";
 test("public landing page loads across viewports without browser runtime errors", async ({ page }, testInfo) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
 
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Every degree.");
   await expect(page.getByRole("banner").getByRole("button", { name: /enter console/i })).toBeVisible();
+  await expect(page.getByText("ARCHITECTURE VIEW")).toBeVisible();
+  const heroArtwork = page.locator(".hero-artwork img");
+  await expect(heroArtwork).toBeVisible();
+  await expect.poll(() => heroArtwork.evaluate((image) => getComputedStyle(image).animationName)).toBe("fg-hero-drift");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect.poll(() => heroArtwork.evaluate((image) => getComputedStyle(image).animationName)).toBe("none");
   for (const [width, height] of [[375, 812], [390, 844], [768, 1024], [1366, 768], [1920, 1080]] as const) {
     await page.setViewportSize({ width, height });
     const results = await new AxeBuilder({ page })
