@@ -30,7 +30,7 @@
 | Backups / recovery | NOT_IMPLEMENTED | No automated backup schedule or restore drill evidence |
 | Container image | IMPLEMENTED_NOT_VERIFIED | Multi-stage API/web images, non-root API runtime, health checks and migration target exist. Build and runtime checks are blocked by the missing Docker Engine; image scan and multi-stage signal/migration smoke remain outstanding |
 | Local Compose deployment | IMPLEMENTED_NOT_VERIFIED | Compose syntax passes; MySQL is internal and persistent, API/web are health-gated and migration precedes API. No container was built or started on this host |
-| CI | VERIFIED for completion code commit | GitHub Actions run `41150310038` passed on exact SHA `1b0c7571ec9c18019c007ca15d89d5da167dc3ea`; clean schema, API, browser and advisory classification passed. Later documentation-only commits require another exact-SHA run if treated as final |
+| CI | VERIFIED for completion/report commits | GitHub Actions run `41150310038` passed for code commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea`; documentation follow-up `d1785b4a1ced7da706300a76ba5b38e507953735` passed run `41150748198` on its exact SHA. |
 | Security validation | PARTIALLY_IMPLEMENTED | High development/optional Prisma tooling advisory remains assessed separately; no penetration test, production TLS review, or external assessment occurred |
 | Asset redistribution | PARTIALLY_IMPLEMENTED | Landing/login references original project SVGs; five unknown JPEGs remain unreferenced locally and must be excluded from publication; see asset register |
 
@@ -48,7 +48,7 @@ This is a proposed topology, not a verified deployment design. Confirm provider-
 
 ## CI source review
 
-`.github/workflows/ci.yml` provisions MySQL 8.4 and runs `npm ci`, Prisma generation, migration + SQL application, typecheck, lint, build, MySQL tests, Chromium/browser tests and dependency advisory classification. Completion code commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea` passed GitHub Actions run `41150310038`. `actionlint` was unavailable locally. See [CI validation notes](../development/CI_VALIDATION.md).
+`.github/workflows/ci.yml` provisions MySQL 8.4 and runs `npm ci`, Prisma generation, migration + SQL application, typecheck, lint, build, MySQL tests, Chromium/browser tests and dependency advisory classification. Completion code commit `1b0c7571ec9c18019c007ca15d89d5da167dc3ea` passed run `41150310038`; report follow-up `d1785b4a1ced7da706300a76ba5b38e507953735` passed run `41150748198`. `actionlint` was unavailable locally. See [CI validation notes](../development/CI_VALIDATION.md).
 
 ## Deployment decision
 
