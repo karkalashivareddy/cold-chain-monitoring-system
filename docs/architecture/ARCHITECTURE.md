@@ -1,6 +1,6 @@
 # FROSTGUARD Architecture
 
-**Audit date:** 2026-10-30
+**Audit date:** 2026-10-31
 
 ## Existing implementation
 
@@ -31,13 +31,13 @@ flowchart LR
 
 ## Runtime status
 
-- Current validation: typecheck, lint, production build and 40 MySQL integration tests passed; the public landing page also passed Playwright against Vite development and production preview.
-- A GitHub Actions CI workflow is present locally with MySQL, migration/SQL, browser smoke and build/test checks. A read-only run query returned 404 because `ci.yml` is not on the remote default branch; remote execution is blocked pending authorized publication.
-- Docker Compose, Nginx and a standalone worker are absent.
-- API and web are configured as separate local processes; the API can serve `apps/web/dist` if it exists.
-- The outbox poller and simulator run in the API process. This is a single-process demonstration topology, not evidence of multi-instance worker coordination.
-- The `tsx` API development launcher is blocked in this Windows environment by Node `uv_os_get_passwd returned ENOMEM`; the compiled API did start against explicit test-only configuration and `frostguard_test`.
-- The public landing and authenticated dashboard were visually inspected at 1366x768 and 390x844. Other operational routes and viewport/accessibility checks remain unverified.
+- Local validation on this revision: typecheck, lint, production build, **74 MySQL integration tests** and **5 Playwright tests** passed. All five Prisma migrations and SQL controls applied to a fresh disposable MySQL database.
+- GitHub Actions includes clean-schema migrations/SQL, build, test and browser checks. Verify the exact pushed revision in the [workflow history](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/workflows/ci.yml).
+- API/web Dockerfiles, Docker Compose and Nginx configuration exist. Compose configuration parses, but local image/runtime verification is unavailable because the Docker Engine is not running.
+- API and web are separate local processes; the API can serve `apps/web/dist` if it exists.
+- The outbox poller and simulator run in the API process. Outbox database claims use `FOR UPDATE SKIP LOCKED`, expiring leases and token-fenced acknowledgement, but Socket.IO fanout remains process-local and failed-event replay tooling is not implemented.
+- The direct SQL-applier command required a temporary Windows `os.userInfo` preload after Node returned `uv_os_get_passwd ENOMEM`; the workaround was removed. The regular integration suite passed without a repository shim.
+- Browser checks cover the landing at five viewports, the live dashboard, fleet map, product create/edit/archive, and authenticated route smoke. Automated axe checks are included in the documented scope; there has been no independent screen-reader audit.
 - REST route prefix is `/api/v1`; the device ingestion path is `POST /api/v1/telemetry/readings`.
 
 ## Architecture decisions and limitations
@@ -50,7 +50,7 @@ The browser resolves shared contracts from packages/shared/src so the CommonJS o
 
 Telemetry serializes writes per sensor, rechecks credential/status under the row lock, and reads the active assignment inside the transaction. Delayed lower-sequence readings remain immutable history and cannot alter live excursion/alert state. Simulator provenance is derived from the trusted internal ingestion path.
 
-The current outbox publisher emits then marks the row published. A single-process guard prevents overlapping local drains, but there is no cross-process lease/claim protocol. Multiple API replicas therefore require an outbox claim and duplicate-delivery strategy before deployment.
+The outbox uses short MySQL row-locking claims with `SKIP LOCKED`, expiring leases and claim-token-fenced acknowledgements, so multiple pollers do not claim the same due row. Delivery is at-least-once: a crash after Socket.IO emit and before acknowledgement can produce a duplicate. Socket.IO uses its in-memory adapter, so rooms do not fan out across API instances; horizontal API operation still needs a shared adapter and deployment-level routing. Failed rows have no authorized replay interface yet and require operational recovery tooling.
 
 ## Related design records
 

@@ -25,13 +25,12 @@ services:
       target: migrate
     restart: "no"
     environment: &api-environment
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
       API_PORT: 4000
       API_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN to the browser-facing origin}
       WEB_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN to the browser-facing origin}
       DATABASE_URL: mysql://frostguard:${MYSQL_PASSWORD}@mysql:3306/frostguard
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set a unique JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set a unique JWT_REFRESH_SECRET}
       DEVICE_HMAC_SECRET: ${DEVICE_HMAC_SECRET:?Set a unique DEVICE_HMAC_SECRET}
       SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:?Set a unique non-default SEED_DEMO_PASSWORD}
       LOG_LEVEL: ${LOG_LEVEL:-info}

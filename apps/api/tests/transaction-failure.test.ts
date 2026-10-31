@@ -55,6 +55,7 @@ describe("transaction rollback when required outbox persistence fails", () => {
           temperature: 4.4,
           humidity: 48,
           recordedAt: new Date().toISOString(),
+          bootId: "rollback-test-boot",
           sequenceNumber,
         })
     );
@@ -67,7 +68,7 @@ describe("transaction rollback when required outbox persistence fails", () => {
     const retry = await request(app)
       .post("/api/v1/telemetry/readings")
       .set("x-device-key", "fgd_demo_fgs-hyd-c1a_2026")
-      .send({ deviceId: sensor.deviceId, temperature: 4.4, humidity: 48, recordedAt: new Date().toISOString(), sequenceNumber });
+      .send({ deviceId: sensor.deviceId, temperature: 4.4, humidity: 48, recordedAt: new Date().toISOString(), bootId: "rollback-test-boot", sequenceNumber });
     expect(retry.status).toBe(201);
     expect(retry.body.data.duplicate).toBe(false);
   });

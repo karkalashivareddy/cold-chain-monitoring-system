@@ -63,7 +63,7 @@ export default function App() {
           <Route path="analytics" element={gate(PERMISSIONS.ANALYTICS_READ, <Analytics />)} />
           <Route path="audit" element={gate(PERMISSIONS.AUDIT_READ, <Audit />)} />
           <Route path="settings" element={gate(PERMISSIONS.USER_READ, <Settings />)} />
-          <Route path="dbms" element={gate(PERMISSIONS.ANALYTICS_READ, <Dbms />)} />
+          <Route path="dbms" element={gate(PERMISSIONS.SETTINGS_MANAGE, <Dbms />)} />
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="*" element={<NotFound />} />

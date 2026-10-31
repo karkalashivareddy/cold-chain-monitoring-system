@@ -84,7 +84,7 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
           shipmentId: assignment?.shipmentId ?? null,
         };
         const latestReading = await tx.sensorReading.findFirst({
-          where: { sensorId: sensor.id },
+          where: { sensorId: sensor.id, bootId: input.bootId },
           orderBy: { sequenceNumber: "desc" },
           select: { sequenceNumber: true },
         });
@@ -98,6 +98,7 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
             temperature: new Prisma.Decimal(input.temperature.toFixed(2)),
             humidity: input.humidity != null ? new Prisma.Decimal(input.humidity.toFixed(2)) : null,
             recordedAt,
+            bootId: input.bootId,
             sequenceNumber: input.sequenceNumber,
             // Only trusted internal simulator calls can mark synthetic data.
             isSimulated: Boolean(opts.internal),
@@ -153,7 +154,7 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
           } else {
             // Persistence rule: require N consecutive out-of-range readings.
             const previous = await tx.sensorReading.findMany({
-              where: { sensorId: sensor.id, sequenceNumber: { lt: input.sequenceNumber } },
+              where: { sensorId: sensor.id, bootId: input.bootId, sequenceNumber: { lt: input.sequenceNumber } },
               orderBy: { sequenceNumber: "desc" },
               take: Math.max(0, profile.persistenceReadings - 1),
             });
@@ -168,7 +169,7 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
             if (persisted) {
               const severity = evaluation.isCritical ? "CRITICAL" : "WARNING";
               const minuteBucket = new Date(recordedAt).toISOString().slice(0, 16);
-              const dedupeKey = `${sensor.id}:${targetKey}:${severity}:${minuteBucket}`;
+              const dedupeKey = `${sensor.id}:${input.bootId}:${targetKey}:${severity}:${minuteBucket}`;
               const excursion = await tx.excursion.create({
                 data: {
                   orgId: sensor.orgId,
@@ -302,6 +303,7 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
               temperature: input.temperature,
               humidity: input.humidity ?? null,
               recordedAt: recordedAt.toISOString(),
+              bootId: input.bootId,
               state: outOfOrder ? "STALE" : evaluation.state,
               isSimulated: Boolean(opts.internal),
               outOfOrder,
@@ -330,8 +332,12 @@ export async function ingestReading(input: TelemetryReadingInput, opts: IngestOp
     );
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      // Duplicate (sensorId, sequenceNumber) — idempotent replay, not an error.
-      return { duplicate: true, message: "Duplicate sequence number ignored (idempotent replay)." };
+      const target = err.meta?.target;
+      const targetText = Array.isArray(target) ? target.join(" ") : String(target ?? "");
+      const expected = ["sensorId", "bootId", "sequenceNumber"].every((field) => targetText.includes(field));
+      if (!expected) throw err;
+      // A sequence is replay-protected within the originating device boot.
+      return { duplicate: true, message: "Duplicate boot and sequence pair ignored (idempotent replay)." };
     }
     throw err;
   }
@@ -457,11 +463,11 @@ export async function latestReadings(orgId: string, limit = 12) {
     LEFT JOIN storage_units su ON su.id = sa.storageUnitId
     LEFT JOIN shipments sh ON sh.id = sa.shipmentId
     JOIN (
-      SELECT sensorId, MAX(sequenceNumber) AS maxSeq
+      SELECT sensorId, MAX(id) AS latestId
       FROM sensor_readings
       WHERE orgId = ${orgId}
       GROUP BY sensorId
-    ) latest ON latest.sensorId = r.sensorId AND latest.maxSeq = r.sequenceNumber
+    ) latest ON latest.sensorId = r.sensorId AND latest.latestId = r.id
     WHERE r.orgId = ${orgId}
     ORDER BY r.recordedAt DESC
     LIMIT ${limit}

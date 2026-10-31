@@ -4,12 +4,18 @@ import { PERMISSIONS } from "@frostguard/shared";
 import { authenticate, requirePermission } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { ok } from "../../lib/http";
+import { AppError } from "../../lib/errors";
+import { env } from "../../config/env";
 import * as service from "./dbms.service";
 
 export const dbmsRouter: Router = Router();
-dbmsRouter.use(authenticate);
+if (env.isProduction) {
+  dbmsRouter.use((_req, _res, next) => next(AppError.notFound("Resource not found")));
+} else {
+  dbmsRouter.use(authenticate);
+}
 
-dbmsRouter.get("/overview", requirePermission(PERMISSIONS.ANALYTICS_READ), async (_req, res, next) => {
+dbmsRouter.get("/overview", requirePermission(PERMISSIONS.SETTINGS_MANAGE), async (_req, res, next) => {
   try {
     return ok(res, await service.getOverview());
   } catch (err) {
@@ -17,7 +23,7 @@ dbmsRouter.get("/overview", requirePermission(PERMISSIONS.ANALYTICS_READ), async
   }
 });
 
-dbmsRouter.get("/tables", requirePermission(PERMISSIONS.ANALYTICS_READ), async (_req, res, next) => {
+dbmsRouter.get("/tables", requirePermission(PERMISSIONS.SETTINGS_MANAGE), async (_req, res, next) => {
   try {
     return ok(res, await service.getTableStats());
   } catch (err) {
@@ -25,7 +31,7 @@ dbmsRouter.get("/tables", requirePermission(PERMISSIONS.ANALYTICS_READ), async (
   }
 });
 
-dbmsRouter.get("/views", requirePermission(PERMISSIONS.ANALYTICS_READ), async (_req, res, next) => {
+dbmsRouter.get("/views", requirePermission(PERMISSIONS.SETTINGS_MANAGE), async (_req, res, next) => {
   try {
     return ok(res, await service.getViews());
   } catch (err) {
@@ -33,7 +39,7 @@ dbmsRouter.get("/views", requirePermission(PERMISSIONS.ANALYTICS_READ), async (_
   }
 });
 
-dbmsRouter.get("/triggers", requirePermission(PERMISSIONS.ANALYTICS_READ), async (_req, res, next) => {
+dbmsRouter.get("/triggers", requirePermission(PERMISSIONS.SETTINGS_MANAGE), async (_req, res, next) => {
   try {
     return ok(res, await service.getTriggers());
   } catch (err) {
@@ -41,7 +47,7 @@ dbmsRouter.get("/triggers", requirePermission(PERMISSIONS.ANALYTICS_READ), async
   }
 });
 
-dbmsRouter.get("/routines", requirePermission(PERMISSIONS.ANALYTICS_READ), async (_req, res, next) => {
+dbmsRouter.get("/routines", requirePermission(PERMISSIONS.SETTINGS_MANAGE), async (_req, res, next) => {
   try {
     return ok(res, await service.getRoutines());
   } catch (err) {
@@ -51,7 +57,7 @@ dbmsRouter.get("/routines", requirePermission(PERMISSIONS.ANALYTICS_READ), async
 
 dbmsRouter.get(
   "/explain",
-  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  requirePermission(PERMISSIONS.SETTINGS_MANAGE),
   validate(z.object({ query: z.enum(["telemetry-range", "open-excursions", "shipment-risk", "device-health"]).default("telemetry-range") }), "query"),
   async (req, res, next) => {
     try {
@@ -63,7 +69,7 @@ dbmsRouter.get(
   }
 );
 
-dbmsRouter.get("/explain-reservation", requirePermission(PERMISSIONS.ANALYTICS_READ), async (req, res, next) => {
+dbmsRouter.get("/explain-reservation", requirePermission(PERMISSIONS.SETTINGS_MANAGE), async (req, res, next) => {
   try {
     return ok(res, await service.explainReservation(req.auth!.orgId));
   } catch (err) {
@@ -71,7 +77,7 @@ dbmsRouter.get("/explain-reservation", requirePermission(PERMISSIONS.ANALYTICS_R
   }
 });
 
-dbmsRouter.get("/incident-summary", requirePermission(PERMISSIONS.ANALYTICS_READ), async (req, res, next) => {
+dbmsRouter.get("/incident-summary", requirePermission(PERMISSIONS.SETTINGS_MANAGE), async (req, res, next) => {
   try {
     return ok(res, await service.incidentSummary(req.auth!.orgId));
   } catch (err) {
@@ -79,7 +85,7 @@ dbmsRouter.get("/incident-summary", requirePermission(PERMISSIONS.ANALYTICS_READ
   }
 });
 
-dbmsRouter.post("/verify-rollback", requirePermission(PERMISSIONS.ANALYTICS_READ), async (req, res, next) => {
+dbmsRouter.post("/verify-rollback", requirePermission(PERMISSIONS.SETTINGS_MANAGE), async (req, res, next) => {
   try {
     return ok(res, await service.verifyRollback(req.auth!.orgId, req.auth!.userId));
   } catch (err) {

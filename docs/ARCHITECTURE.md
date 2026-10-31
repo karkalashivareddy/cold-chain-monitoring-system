@@ -30,7 +30,7 @@ Users (owner / admin / manager / operator / auditor / viewer)
                             │
         ┌───────────────────┼────────────────────┐
         ▼                   ▼                    ▼
-   MySQL 8.x          OpenStreetMap        Device / simulator
+   MySQL 8.4 LTS      OpenStreetMap        Device / simulator
    InnoDB schema      raster tiles         POST telemetry readings
 ```
 
@@ -141,7 +141,7 @@ There is no generic repository abstraction. Domain services call Prisma directly
 - Reuse of an already-revoked refresh token revokes every unrevoked token in the same family and returns `401`.
 - Browser delivery: `fg_refresh` httpOnly cookie scoped to `/api/v1/auth`.
 
-`JWT_REFRESH_SECRET` is required by environment validation but is not used for signing: refresh tokens are opaque database records, not JWTs.
+Refresh tokens are opaque random values stored as hashes in MySQL. Each refresh-token family stores the organization selected at login; refresh rotation requires that same active membership and cannot silently switch the user to another tenant.
 
 ### Login
 
@@ -263,7 +263,7 @@ Load sensor by deviceId (uppercased)
   ▼
 Transaction (ReadCommitted, 15 s timeout)
   ├─ insert reading
-  │    unique (sensorId, sequenceNumber) → duplicate replay is a 200 no-op
+  │    unique (sensorId, bootId, sequenceNumber) → duplicate replay is a 200 no-op
   ├─ update sensor lastSeenAt/status
   ├─ resolve applicable temperature profile
   ├─ evaluate temperature
@@ -276,14 +276,14 @@ Transaction (ReadCommitted, 15 s timeout)
 
 ### Idempotency
 
-A replay of the same `(sensorId, sequenceNumber)` triggers a Prisma `P2002` unique-constraint error. The service catches that specific case and returns:
+A replay of the same `(sensorId, bootId, sequenceNumber)` triggers a Prisma `P2002` unique-constraint error. The service catches only that unique constraint and returns:
 
 ```json
 {
   "success": true,
   "data": {
     "duplicate": true,
-    "message": "Duplicate sequence number ignored (idempotent replay)."
+    "message": "Duplicate boot and sequence pair ignored (idempotent replay)."
   }
 }
 ```
@@ -307,7 +307,7 @@ with HTTP `200` instead of `201`. The reading is not stored twice.
 
 ### Persistence rule
 
-A new excursion is only created after the configured number of consecutive out-of-range readings. The engine looks back at earlier readings by descending `sequenceNumber` and requires all of them to be out of range. `persistenceReadings <= 1` disables persistence for that profile.
+A new excursion is only created after the configured number of consecutive out-of-range readings in the same device boot epoch. Ingestion locks the sensor row before reading prior sequence state, serializing concurrent submissions for that sensor. The engine looks back at earlier readings in the same `bootId` by descending `sequenceNumber` and requires all of them to be out of range. `persistenceReadings <= 1` disables persistence for that profile. Devices must supply a new stable `bootId` on each reboot; ordering is per boot epoch, while latest telemetry is selected by database insertion order.
 
 An open excursion is updated with new min/max, duration and reading count; a subsequent in-range reading marks it `RECOVERED` and resolves its open/acknowledged alerts.
 
@@ -335,7 +335,7 @@ Shipment risk is also set to `80` for a critical excursion and `50` for a warnin
 - `sequenceNumber` — per-sensor idempotency key.
 - `receivedAt` — server receipt time; `recordedAt` — device time.
 
-The database trigger `trg_sensor_readings_immutable` rejects any `UPDATE` to `sensor_readings`, making telemetry append-only.
+Database triggers reject direct updates to `sensor_readings` and both updates and deletes to `audit_logs`, protecting their append-only history during ordinary application-role statements. A database owner can still alter triggers, and MySQL cascades do not invoke child-table delete triggers; separate least-privilege DBA controls and retention policy are still required for stronger guarantees.
 
 ---
 
@@ -405,7 +405,8 @@ The SPA maps topics to React Query cache roots in `apps/web/src/lib/realtime.ts`
 - Socket.IO runs without a shared adapter. Org rooms and publication are process-local.
 - The outbox worker is an in-process timer, not a separately scaled worker.
 - Publication is at-least-once from the outbox's perspective: a crash after publish but before marking `PUBLISHED` can republish.
-- If no Socket.IO server is initialized (for example, in tests using the Express app directly), publication is a no-op but outbox rows are still marked published by the worker when it runs.
+- If no Socket.IO server is initialized, publication fails and the claim is released with retry/backoff; the row is not marked published.
+- Failed rows have no permission-checked replay or recovery interface yet.
 
 ---
 
@@ -524,17 +525,16 @@ Logging: Pino + `pino-http`, with request IDs and status-based levels. Health en
 
 ## 14. Deployment status
 
-The repository contains application code only. It does **not** include:
+The repository includes multi-stage API/web Dockerfiles, a local Compose deployment, an Nginx reverse proxy, and GitHub Actions validation. It does **not** include:
 
-- a Dockerfile or Compose file,
 - Kubernetes manifests,
-- reverse-proxy/TLS configuration,
+- TLS termination configuration,
 - a database backup/restore job,
 - a secret manager integration,
 - centralized log/metric/trace export,
 - a multi-instance Socket.IO adapter or shared rate-limit store.
 
-GitHub Actions validation now exists in .github/workflows/ci.yml for npm installation, migration/SQL, typecheck, lint, production build, public browser smoke, MySQL integration tests and dependency classification. It has not been verified through a remote GitHub run.
+GitHub Actions validation in `.github/workflows/ci.yml` performs npm installation, Prisma migration and SQL application, typecheck, lint, production build, public browser smoke, MySQL integration tests and dependency advisory classification. Review the [workflow history](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/workflows/ci.yml) for the latest main-branch result. CI is evidence for that commit only; local Docker image/startup verification and hosted production deployment remain unverified.
 
 The API can serve `apps/web/dist` from the same origin if it exists, which removes cross-site cookie complexity for a single-host deployment. That code path exists, but no production deployment was verified.
 

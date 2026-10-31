@@ -30,6 +30,7 @@ export async function issueSession(
   await prisma.refreshToken.create({
     data: {
       userId,
+      orgId,
       tokenHash: refresh.hash,
       familyId: family,
       expiresAt,
@@ -137,7 +138,7 @@ export async function rotateRefreshToken(
   if (record.expiresAt < new Date()) throw AppError.unauthorized("Refresh token expired");
   if (!record.user.isActive) throw AppError.unauthorized("Account inactive");
 
-  const membership = record.user.memberships[0];
+  const membership = record.user.memberships.find((candidate) => candidate.orgId === record.orgId);
   if (!membership) throw AppError.unauthorized("Membership revoked");
 
   const next = generateRefreshToken();
@@ -147,6 +148,7 @@ export async function rotateRefreshToken(
     const created = await tx.refreshToken.create({
       data: {
         userId: record.userId,
+        orgId: record.orgId,
         tokenHash: next.hash,
         familyId: record.familyId,
         expiresAt,

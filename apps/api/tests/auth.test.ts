@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import request from "supertest";
 import { app, cookieValue, login, bearer, NORTHLINE } from "./helpers";
+import { prisma } from "../src/lib/prisma";
 
 describe("authentication and session lifecycle", () => {
   it("serves the API documentation and machine-readable route specification", async () => {
@@ -13,6 +14,7 @@ describe("authentication and session lifecycle", () => {
     expect(spec.status).toBe(200);
     expect(spec.body.openapi).toBe("3.1.0");
     expect(spec.body.paths["/telemetry/readings"].post.security).toEqual([{ deviceKey: [] }]);
+    expect(spec.body.paths["/telemetry/readings"].post.requestBody.description).toContain("bootId");
     expect(spec.body.paths["/incidents/{id}/resolve"].post).toBeDefined();
     expect(spec.body.paths["/shipments/{id}/dispatch"].post.requestBody).toBeUndefined();
     expect(spec.body.paths["/health/ready"].get.security).toEqual([]);
@@ -89,6 +91,30 @@ describe("authentication and session lifecycle", () => {
       .post("/api/v1/auth/refresh")
       .send({ refreshToken: rotated });
     expect(afterRevocation.status).toBe(401);
+  });
+
+  it("keeps a refresh-token family in the organization selected at login", async () => {
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: NORTHLINE.owner } });
+    const meridian = await prisma.organization.findUniqueOrThrow({ where: { slug: "meridian" } });
+    const ownerRole = await prisma.role.findUniqueOrThrow({ where: { key: "owner" } });
+    await prisma.membership.create({ data: { userId: user.id, orgId: meridian.id, roleId: ownerRole.id } });
+
+    try {
+      const selected = await login(NORTHLINE.owner, { organizationSlug: "meridian" });
+      expect(selected.user.organization.slug).toBe("meridian");
+      const refreshed = await request(app)
+        .post("/api/v1/auth/refresh")
+        .send({ refreshToken: selected.refreshToken });
+      expect(refreshed.status).toBe(200);
+
+      const me = await request(app)
+        .get("/api/v1/auth/me")
+        .set(bearer(refreshed.body.data.accessToken));
+      expect(me.status).toBe(200);
+      expect(me.body.data.organization.slug).toBe("meridian");
+    } finally {
+      await prisma.membership.delete({ where: { orgId_userId: { orgId: meridian.id, userId: user.id } } });
+    }
   });
 
   it("requires a valid access token for protected resources", async () => {

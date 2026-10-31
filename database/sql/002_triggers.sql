@@ -60,3 +60,27 @@ BEGIN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'progressPercent must be between 0 and 100';
   END IF;
 END;
+
+-- @statement
+DROP TRIGGER IF EXISTS trg_audit_logs_immutable_update;
+
+-- @statement
+CREATE TRIGGER trg_audit_logs_immutable_update
+BEFORE UPDATE ON audit_logs
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'audit_logs is append-only: historical audit events cannot be modified';
+END;
+
+-- @statement
+DROP TRIGGER IF EXISTS trg_audit_logs_immutable_delete;
+
+-- @statement
+CREATE TRIGGER trg_audit_logs_immutable_delete
+BEFORE DELETE ON audit_logs
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'audit_logs is append-only: historical audit events cannot be deleted';
+END;

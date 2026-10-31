@@ -42,12 +42,12 @@ export const toneDot: Record<Tone, string> = {
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "success" | "outline";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: "bg-cyan text-abyss hover:bg-cyan/90 shadow-[0_10px_30px_-14px_rgba(56,189,248,0.9)]",
-  secondary: "border border-line bg-elevated/70 text-ice hover:border-cyan/40 hover:bg-elevated",
-  ghost: "text-mist hover:bg-white/5 hover:text-ice",
-  danger: "bg-rose text-abyss hover:bg-rose/90 shadow-[0_10px_30px_-14px_rgba(251,113,133,0.8)]",
-  success: "bg-teal text-abyss hover:bg-teal/90 shadow-[0_10px_30px_-14px_rgba(45,212,191,0.8)]",
-  outline: "border border-cyan/40 text-cyan hover:bg-cyan/10",
+  primary: "fg-button-primary text-abyss",
+  secondary: "fg-button-secondary border border-line bg-elevated/70 text-ice hover:border-cyan/50 hover:bg-elevated",
+  ghost: "fg-button-quiet text-mist hover:bg-cyan/8 hover:text-ice",
+  danger: "fg-button-danger bg-rose text-abyss",
+  success: "fg-button-success bg-teal text-abyss",
+  outline: "fg-button-outline border border-cyan/40 text-cyan hover:bg-cyan/10",
 };
 
 const buttonSizes = {
@@ -79,7 +79,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex select-none items-center justify-center rounded-xl font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
+        "fg-button inline-flex select-none items-center justify-center rounded-xl font-semibold disabled:cursor-not-allowed disabled:opacity-50",
         buttonVariants[variant],
         buttonSizes[size],
         className
@@ -104,7 +104,7 @@ export function IconButton({
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex size-9 items-center justify-center rounded-lg text-mist transition-colors hover:bg-white/5 hover:text-ice",
+        "fg-button fg-button-quiet inline-flex size-9 items-center justify-center rounded-lg text-mist hover:bg-cyan/8 hover:text-ice focus-visible:ring-2 focus-visible:ring-cyan/70",
         className
       )}
       {...props}
@@ -119,7 +119,7 @@ export function IconButton({
 /* -------------------------------------------------------------------------- */
 
 const fieldBase =
-  "w-full rounded-xl border border-line bg-abyss/60 px-3 py-2 text-sm text-ice placeholder:text-mist/50 transition-colors focus:border-cyan/60 focus:outline-none focus:ring-2 focus:ring-cyan/15 disabled:opacity-60";
+  "w-full rounded-xl border border-line bg-abyss/60 px-3 py-2 text-sm text-ice placeholder:text-mist/50 transition-colors hover:border-cyan/35 focus:border-teal/70 focus:outline-none focus:ring-2 focus:ring-cyan/20 disabled:opacity-60";
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cn(fieldBase, className)} {...props} />;
@@ -195,13 +195,13 @@ export function Switch({
         onClick={() => onChange(!checked)}
         className={cn(
           "relative h-5 w-9 rounded-full border transition-colors",
-          checked ? "border-cyan/50 bg-cyan/30" : "border-line bg-abyss"
+          checked ? "border-teal/60 bg-teal/25" : "border-line bg-abyss"
         )}
       >
         <span
           className={cn(
             "absolute top-0.5 size-3.5 rounded-full transition-transform",
-            checked ? "translate-x-[18px] bg-cyan" : "translate-x-0.5 bg-mist"
+            checked ? "translate-x-[18px] bg-teal" : "translate-x-0.5 bg-mist"
           )}
         />
       </button>
@@ -348,7 +348,7 @@ export function TD({ children, className, ...props }: React.TdHTMLAttributes<HTM
 
 export function TR({ children, className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={cn("transition-colors hover:bg-white/[0.025]", className)} {...props}>
+    <tr className={cn("transition-colors hover:bg-cyan/[0.045]", className)} {...props}>
       {children}
     </tr>
   );
@@ -616,8 +616,8 @@ export function Tabs({
           aria-selected={value === tab.value}
           onClick={() => onChange(tab.value)}
           className={cn(
-            "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-            value === tab.value ? "bg-cyan/15 text-cyan" : "text-mist hover:bg-white/5 hover:text-ice"
+            "fg-tab rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+            value === tab.value ? "bg-cyan/15 text-cyan" : "text-mist hover:bg-cyan/8 hover:text-ice"
           )}
         >
           {tab.label}

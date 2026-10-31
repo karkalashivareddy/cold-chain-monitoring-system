@@ -25,7 +25,7 @@ Temperature thresholds are profile-specific. A threshold excursion is evidence t
 
 ## Referential actions
 
-The schema mostly uses explicit `Cascade`, `SetNull`, or default restrictive relation behavior. Cascades are suitable for tenant-owned demo aggregates but require careful retention policy for audit and telemetry in a real deployment. The append-only reading trigger protects `UPDATE`, not deletion by a privileged database user. See [technical debt](../audit/TECHNICAL_DEBT.md).
+The schema mostly uses explicit `Cascade`, `SetNull`, or default restrictive relation behavior. Cascades are suitable for tenant-owned demo aggregates but require careful retention policy for audit and telemetry in a real deployment. Reading sequence uniqueness is scoped by sensor and device boot ID so rebooted counters do not discard new telemetry. The append-only reading trigger protects `UPDATE`, not deletion by a privileged database user. See [technical debt](../audit/TECHNICAL_DEBT.md).
 
 ## Migrations and UTC
 

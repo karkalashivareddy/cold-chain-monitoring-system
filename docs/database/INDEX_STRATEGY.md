@@ -12,7 +12,7 @@ Indexes are reviewed against current query paths in `apps/api/src/modules/*`, sc
 | Batch lookup | unique `(orgId,productId,batchNumber)`, `(orgId,status)`, `expiresAt`, `storageUnitId` | Identity, available inventory, expiry and storage association. |
 | Warehouse/storage | unique `(orgId,code)`, storage `warehouseId` | Tenant code and warehouse relation. |
 | Sensor assignment | `(sensorId,endedAt)`, `storageUnitId`, `shipmentId` | Current assignment and resource lookup. |
-| Reading history | unique `(sensorId,sequenceNumber)`, `(orgId,recordedAt)`, `(sensorId,recordedAt)`, SQL `(orgId,sensorId,sequenceNumber)` | Replay/idempotency and time-ordered retrieval. |
+| Reading history | unique `(sensorId,bootId,sequenceNumber)`, `(orgId,recordedAt)`, `(sensorId,recordedAt)`, SQL `(orgId,sensorId,sequenceNumber)` | Replay/idempotency within a boot epoch and time-ordered retrieval. |
 | Shipment list | `(orgId,status)`, `(orgId,createdAt)` plus SQL `(orgId,status,createdAt)` | Tenant status/time filters. |
 | Shipment event timeline | `(shipmentId,occurredAt)` | Ordered shipment event detail. |
 | Excursion/alert/incident queues | org/status/time, severity, entity/date indexes | Operational queue filters and drill-downs. |

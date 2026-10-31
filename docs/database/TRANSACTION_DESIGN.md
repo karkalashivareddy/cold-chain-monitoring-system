@@ -11,13 +11,13 @@ Endpoint: POST /api/v1/telemetry/readings. Device authentication uses device ide
 3. Lock the sensor row using a parameterized SELECT id FROM sensors WHERE id = ? FOR UPDATE.
 4. Recheck current sensor status and the device key while holding the row lock. Read the active assignment within the transaction; device assignment changes acquire the same sensor-row lock.
 5. Read the latest sequence and determine whether the incoming reading is delayed/out-of-order.
-6. Insert the immutable SensorReading. Unique sensorId/sequenceNumber rejects exact replay. The MySQL update trigger rejects historical reading mutation.
+6. Insert the immutable SensorReading. Unique `(sensorId, bootId, sequenceNumber)` rejects exact replay within a device boot epoch; boot ID changes allow sequence counters to restart after a reboot. The MySQL update trigger rejects historical reading mutation.
 7. Update last-seen/status. For a lower sequence, keep the row as historical evidence, mark the response/outbox event outOfOrder, and do not change live excursion/alert state.
 8. Derive isSimulated from trusted internal simulator context. An external device request cannot mark its physical device reading simulated.
 9. For in-order data, resolve profile and evaluate temperature. Apply configured consecutive-reading persistence; create/update/recover excursion and relevant alert/incident state.
 10. Write audit and outbox rows in the same transaction, commit, then allow the periodic outbox worker to publish.
 
-The seven API/MySQL test files (40 cases) verify duplicate replay, append-only history, product profile isolation, delayed readings, device provenance and a persisted critical excursion/alert/incident. No test injects a failure midway through telemetry to assert all writes roll back. Concurrent ingestion/reassignment and sequence-counter reset/re-provisioning are not yet tested or modeled.
+API/MySQL integration tests verify duplicate replay, rebooted sequence counters, append-only history, product profile isolation, delayed readings, device provenance and a persisted critical excursion/alert/incident. Sensor-row locking serializes ingestion against other readings and assignment updates. Failure injection verifies transaction rollback; production scale and multi-instance concurrency are not covered by local tests.
 
 ## Shipment creation, dispatch and inventory
 

@@ -12,6 +12,7 @@ type SimulationState = {
   intervalMs: number;
   step: number;
   sequenceNumber: number;
+  bootId: string;
   baseTemp: number;
 };
 
@@ -68,7 +69,8 @@ export async function startSimulation(
     scenario,
     intervalMs,
     step: 0,
-    sequenceNumber: (sensor.readings[0]?.sequenceNumber ?? 0) + 1,
+    sequenceNumber: 1,
+    bootId: `sim-${simulation.id}`,
     baseTemp: Math.max(-70, Math.min(25, baseTemp)),
   };
   state.set(sensorId, s);
@@ -101,6 +103,7 @@ async function tick(orgId: string, s: SimulationState) {
           temperature: Number(temp.toFixed(2)),
           humidity: 48 + Math.sin(s.step / 9) * 3,
           recordedAt: new Date().toISOString(),
+          bootId: s.bootId,
           sequenceNumber: s.sequenceNumber++,
           isSimulated: true,
         },

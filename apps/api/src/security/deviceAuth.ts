@@ -22,15 +22,15 @@ export function issueDeviceKey(): { key: string; hash: string; prefix: string } 
 
 /** Canonical payload signature for optional transport integrity (replay-resistant). */
 export function signTelemetryPayload(
-  body: { deviceId: string; temperature: number; recordedAt: string; sequenceNumber: number; nonce?: string },
+  body: { deviceId: string; temperature: number; recordedAt: string; bootId: string; sequenceNumber: number; nonce?: string },
   secret: string
 ): string {
-  const canonical = [body.deviceId, body.temperature.toFixed(2), body.recordedAt, body.sequenceNumber, body.nonce ?? ""].join("|");
+  const canonical = [body.deviceId, body.temperature.toFixed(2), body.recordedAt, body.bootId, body.sequenceNumber, body.nonce ?? ""].join("|");
   return crypto.createHmac("sha256", secret).update(canonical).digest("hex");
 }
 
 export function verifyTelemetrySignature(
-  body: { deviceId: string; temperature: number; recordedAt: string; sequenceNumber: number; nonce?: string; signature?: string },
+  body: { deviceId: string; temperature: number; recordedAt: string; bootId: string; sequenceNumber: number; nonce?: string; signature?: string },
   secret: string
 ): boolean {
   if (!body.signature) return false;

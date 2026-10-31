@@ -24,6 +24,7 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   memberships       Membership[]
+  refreshTokens     RefreshToken[]
   products          Product[]
   temperatureProfiles TemperatureProfile[]
   suppliers         Supplier[]
@@ -124,6 +125,7 @@ model Membership {
 model RefreshToken {
   id           String    @id @default(cuid())
   userId       String
+  orgId        String
   tokenHash    String    @unique @db.VarChar(64)
   familyId     String    @db.VarChar(40)
   expiresAt    DateTime
@@ -134,9 +136,11 @@ model RefreshToken {
   createdAt    DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@index([userId, revokedAt])
   @@index([familyId])
+  @@index([orgId, userId])
   @@map("refresh_tokens")
 }
 
@@ -337,6 +341,7 @@ model SensorReading {
   humidity       Decimal? @db.Decimal(5, 2)
   recordedAt     DateTime
   receivedAt     DateTime @default(now())
+  bootId         String   @default("legacy") @db.VarChar(64)
   sequenceNumber Int
   isSimulated    Boolean  @default(false)
   source         String   @default("DEVICE") @db.VarChar(20)
@@ -344,7 +349,7 @@ model SensorReading {
 
   sensor Sensor @relation(fields: [sensorId], references: [id], onDelete: Cascade)
 
-  @@unique([sensorId, sequenceNumber])
+  @@unique([sensorId, bootId, sequenceNumber])
   @@index([orgId, recordedAt])
   @@index([sensorId, recordedAt])
   @@map("sensor_readings")

@@ -2,8 +2,8 @@
   "name": "frostguard",
   "version": "1.0.0",
   "private": true,
-  "description": "FROSTGUARD — enterprise cold-chain intelligence, monitoring and traceability platform.",
-  "license": "UNLICENSED",
+  "description": "FROSTGUARD — multi-tenant cold-chain monitoring, telemetry and traceability demo.",
+  "license": "MIT",
   "workspaces": [
     "packages/*",
     "apps/*"

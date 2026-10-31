@@ -1,7 +1,7 @@
 # Test Environment
 
 **Evidence date:** 2026-10-30\
-**Status:** **PARTIALLY_IMPLEMENTED** — the latest 66-test suite passed, but this Windows host requires a process-scoped workaround; WSL and Docker alternatives were unavailable here.
+**Status:** **PARTIALLY_IMPLEMENTED** — the latest 74-test suite and 5-test Playwright run passed. A process-scoped workaround was only needed for a direct SQL-applier command; the normal test suite runs without a repository shim. Docker remains unavailable on this host.
 
 ## Execution host and services
 
@@ -90,4 +90,4 @@ This Windows host has `wsl.exe`, but `wsl.exe --status` returned `Wsl/EnumerateD
 
 ## Test evidence
 
-The full suite passed **13 files / 66 tests** on 2026-10-31 against `frostguard_test` using the temporary preload above. The full Playwright suite passed **3 tests** including the 14-route authenticated smoke and mobile-navigation interaction; typecheck, lint, and production build also passed. The workaround was removed after execution. No temporary shim exists in the repository.
+The latest local suite passed **13 files / 74 tests** on 2026-10-31 against `frostguard_test`. The Playwright suite passed **5 tests**, including public landing at five viewport sizes, dashboard, map, product management and the 14-route authenticated smoke; typecheck, lint, and production build also passed. A temporary preload was used only for the direct SQL applier invocation because Node's Windows `os.userInfo` returned ENOMEM, then removed. No workaround shim exists in the repository.

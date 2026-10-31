@@ -12,7 +12,7 @@ FROSTGUARD uses **MySQL/InnoDB** as its authoritative store. The schema is defin
 
 ## 1. Target and conventions
 
-- Database engine: **MySQL 8.x / InnoDB**. The schema header names **MySQL 8.4 LTS** as the design target; the repository's documented local setup uses **MySQL 8.0**.
+- Database engine: **MySQL 8.4 LTS / InnoDB**, matching the Prisma schema target, Docker Compose image and CI service.
 - ORM field names are camelCase; mapped table names are snake_case.
 - Identifiers are `cuid()` strings except high-volume append tables:
   - `sensor_readings.id` — `BigInt` autoincrement.
@@ -41,7 +41,7 @@ There are **31 Prisma models** (tables), plus Prisma's `_prisma_migrations` book
 | `Permission` | `permissions` | `key` unique. Permission catalogue. |
 | `RolePermission` | `role_permissions` | Composite PK `(roleId, permissionId)`; cascades on role/permission delete. |
 | `Membership` | `memberships` | User ↔ organization + role. Unique `(orgId, userId)`; indexes on user and role. |
-| `RefreshToken` | `refresh_tokens` | `tokenHash` unique, family id, expiry, revocation, replacement id, IP/user agent. Indexes on `(userId, revokedAt)` and `familyId`. |
+| `RefreshToken` | `refresh_tokens` | `tokenHash` unique, family id, selected `orgId`, expiry, revocation, replacement id, IP/user agent. Indexes on `(userId, revokedAt)`, `familyId` and `(orgId, userId)`; family rotation remains in the selected organization. |
 
 ### Catalogue and inventory
 
@@ -60,7 +60,7 @@ There are **31 Prisma models** (tables), plus Prisma's `_prisma_migrations` book
 | --- | --- | --- |
 | `Sensor` | `sensors` | Org-scoped device. `deviceId` globally unique; API-key hash and prefix; status, last seen, calibration due. Index `(orgId, status)`. |
 | `SensorAssignment` | `sensor_assignments` | Historical assignment to a storage unit, shipment, or neither. `endedAt` marks closure. Indexes on `(sensorId, endedAt)`, `storageUnitId`, `shipmentId`. |
-| `SensorReading` | `sensor_readings` | Append-only telemetry. Auto-increment `BigInt` id. Unique `(sensorId, sequenceNumber)` for replay protection. Indexes `(orgId, recordedAt)`, `(sensorId, recordedAt)`. Stores provenance (`isSimulated`, `source`). |
+| `SensorReading` | `sensor_readings` | Append-only telemetry. Auto-increment `BigInt` id. Unique `(sensorId, bootId, sequenceNumber)` for replay protection across reboots. Indexes `(orgId, recordedAt)`, `(sensorId, recordedAt)`. Stores provenance (`isSimulated`, `source`). |
 | `DeviceSimulation` | `device_simulations` | Simulation run metadata: scenario, interval, status, timestamps, creator. Index `(orgId, status)`. |
 
 ### Logistics
@@ -183,6 +183,8 @@ These views are exposed to permitted users through `GET /api/v1/dbms/views` and 
 | Trigger | Timing/table | Invariant |
 | --- | --- | --- |
 | `trg_sensor_readings_immutable` | `BEFORE UPDATE` on `sensor_readings` | Any update raises SQLSTATE `45000`: telemetry is append-only. |
+| `trg_audit_logs_immutable_update` | `BEFORE UPDATE` on `audit_logs` | Direct mutation raises SQLSTATE `45000`; audit events are append-only. |
+| `trg_audit_logs_immutable_delete` | `BEFORE DELETE` on `audit_logs` | Direct deletion raises SQLSTATE `45000`; audit events are append-only. |
 | `trg_batches_stock_guard` | `BEFORE UPDATE` on `batches` | `remainingQuantity` cannot be negative or exceed `quantity`. |
 | `trg_incident_resolution_guard` | `BEFORE UPDATE` on `incidents` | Status `RESOLVED` requires `resolutionNotes` of at least 10 characters. |
 | `trg_shipment_delivery_stamp` | `BEFORE UPDATE` on `shipments` | Sets `deliveredAt` to `UTC_TIMESTAMP(3)` if status is `DELIVERED` and the timestamp is null; rejects progress outside `0..100`. |
@@ -304,7 +306,7 @@ Each returns `EXPLAIN FORMAT=JSON` for a representative, org-parameterized query
    - Meridian Cold Logistics (`meridian`) with one owner.
 5. Creates profiles, suppliers, products, batches, warehouses, storage units, sensors, vehicles, drivers, shipments, events, excursions, alerts, incidents, audit rows and notifications.
 6. Writes sensor readings with `isSimulated=true` and `source="SEED"`.
-7. Prints demo users and development device keys to the console.
+7. Prints demo user identities and explicitly reports that device key material is not printed.
 
 All seeded users share `SEED_DEMO_PASSWORD` (default `Frostguard#2026`). Demo device keys are predictable (`fgd_demo_<deviceid>_2026`) and must never be used outside local demos. Only their SHA-256 digests are stored.
 
@@ -315,13 +317,13 @@ The seed is intended for demonstration and integration-test setup, not productio
 ## 9. Migrations vs test schema
 
 - Application setup: `prisma migrate dev` → apply SQL → seed.
-- Integration tests: create `frostguard_test`, run `prisma db push --force-reset` (not migrations), apply SQL, seed.
+- CI validates committed migrations on a clean database before tests. The integration suite separately creates a loopback database whose name must end in `_test`, runs `prisma db push --force-reset`, applies SQL and seeds it.
 
 Consequences:
 
 - The SQL layer must remain compatible with both migration-created and `db push`-created schemas. The procedure collation note exists because of this.
-- There is one committed migration (`20261030124615_init`). Schema changes made after it rely on Prisma migration workflow; no additional migration is present in the repository snapshot.
-- Tests use a disposable database at `mysql://root:root@localhost:3306/frostguard_test` by default. Do not point them at a database you care about.
+- Integration tests exercise a disposable schema created by `db push`; migration deployment is covered as a separate CI gate. Use `TEST_DATABASE_URL` to select another loopback database ending in `_test`.
+- Tests default to `mysql://root:root@localhost:3306/frostguard_test`; setup refuses a non-loopback host or a database name without the `_test` suffix. Do not point tests at a database you care about.
 
 ---
 
@@ -345,10 +347,10 @@ Not implemented or not verified:
 - Encryption at rest/TDE configuration.
 - Database user least-privilege separation (the app uses one connection string).
 - Migration rollback/runbook beyond Prisma's standard tooling.
-- Automated schema drift detection, migration testing in CI or query-performance regression tests.
-- A database-trigger guarantee that `audit_logs` cannot be updated/deleted.
+- Automated schema drift detection or query-performance regression tests. CI does validate committed migrations on a clean MySQL 8.4 service.
+- Organization deletion cascades can remove associated audit history because MySQL does not invoke child delete triggers for cascades; a database owner can also alter/drop integrity triggers. No retention or separate least-privilege DBA workflow is configured.
 - A trigger preventing deletion of `sensor_readings`.
-- Multi-instance-safe outbox polling (no `SKIP LOCKED` claim; a single in-process worker is assumed).
+- The outbox uses DB-backed `SKIP LOCKED` leases with token-fenced acknowledgements across pollers. Socket.IO fanout still uses the in-memory adapter, and there is no permission-checked failed-event replay interface or exactly-once delivery guarantee.
 - Docker/MySQL 8.4 runtime verification.
 
 The local setup and command reference are in the root [README](../README.md).

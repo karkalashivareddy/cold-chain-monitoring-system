@@ -14,7 +14,7 @@ FROSTGUARD is a multi-tenant reference implementation for temperature-controlled
 - [What is not implemented or not verified](#what-is-not-implemented-or-not-verified)
 - [Architecture](#architecture)
 - [Monorepo layout](#monorepo-layout)
-- [Local setup with MySQL 8.0](#local-setup-with-mysql-80)
+- [Local setup with MySQL 8.4](#local-setup-with-mysql-84)
 - [Docker Compose local deployment](#docker-compose-local-deployment)
 - [Environment variables](#environment-variables)
 - [Database commands](#database-commands)
@@ -45,7 +45,7 @@ FROSTGUARD is a multi-tenant reference implementation for temperature-controlled
 - Products, temperature profiles, suppliers, batches, warehouses and storage units.
 - Batch traceability view and CSV evidence exports.
 - Device provisioning, key rotation and revocation. Device API keys are stored as SHA-256 digests and shown once.
-- Device-authenticated telemetry ingestion with optional HMAC payload signatures, timestamp sanity checks and `(sensorId, sequenceNumber)` idempotency.
+- Device-authenticated telemetry ingestion with optional HMAC payload signatures, timestamp sanity checks and `(sensorId, bootId, sequenceNumber)` idempotency (device counters may safely restart after a reboot).
 - Temperature policy resolution using the narrowest applicable envelope across a shipment's batches.
 - Persistence-based excursion detection, warning/critical severity, automatic alerts and automatic critical-incident creation.
 - Alert acknowledgement and an incident workflow: `OPEN → ACKNOWLEDGED → INVESTIGATING → RESOLVED → CLOSED`, with notes, assignment, root cause, outcome and audit rows.
@@ -60,9 +60,9 @@ FROSTGUARD is a multi-tenant reference implementation for temperature-controlled
 ### Database engineering
 
 - MySQL/InnoDB schema with 31 Prisma models, explicit decimal precision, UTC timestamps, foreign keys, unique constraints and indexes.
-- Five reporting views, four integrity triggers, two stored procedures and nine `CHECK` constraints applied from `database/sql/`.
+- Five reporting views, six integrity triggers, two stored procedures and nine `CHECK` constraints applied from `database/sql/`.
 - Append-only telemetry enforced in the database by a trigger.
-- Immutable-by-workflow audit rows written inside the same transaction as the business change. There is no database trigger preventing privileged direct updates to `audit_logs`; see [security controls](docs/security/SECURITY_CONTROLS.md).
+- Audit rows are written in the business transaction; database triggers reject direct row updates and deletes. Organization cascades still bypass child delete triggers, and a database owner can alter triggers; see [security controls](docs/security/SECURITY_CONTROLS.md).
 
 ### Web application
 
@@ -86,10 +86,10 @@ These points are intentionally explicit:
 - **No password-reset, change-password, email-verification or MFA flow.**
 - **No email/SMS/push delivery.** `notification_logs` rows are in-app records only.
 - **No external object storage or document upload.** CSV/PDF reports are generated on demand.
-- **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; the latest verified `main` commit `5b4c14376d55d81eebaf834cf4f3c982a4ec8524` passed [run 41164445859](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41164445859). Three high Prisma/deepmerge-ts findings remain.
+- **No container or infrastructure security scanning** is configured. GitHub Actions runs a lockfile-based npm advisory classifier; inspect the [workflow history](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/workflows/ci.yml) for the latest remote result. Three high Prisma/deepmerge-ts findings remain.
 - **No external penetration test, threat-model validation or compliance audit** is evidenced.
 - **Playwright coverage includes the public landing page, a seeded live dashboard, and authenticated route smoke across 14 operational routes.** The route smoke does not cover every control or full business workflow.
-- **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency-advisory classification. The current `main` commit `5b4c14376d55d81eebaf834cf4f3c982a4ec8524` passed [run 41164445859](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41164445859). The workflow classifies known advisories; that does not mean the three high Prisma/deepmerge-ts findings are resolved.
+- **A GitHub Actions CI workflow is present** with MySQL, migration/SQL, browser smoke, lint, typecheck, build, tests and dependency-advisory classification. The workflow classifies known advisories; that does not mean the three high Prisma/deepmerge-ts findings are resolved. Check the linked workflow history for the latest run on the repository's current main revision.
 - **No production deployment, TLS termination, or executed backup/restore drill** is evidenced. Local Nginx proxy and backup instructions are documented; container runtime remains unverified.
 - Public landing, dashboard, 14 authenticated routes and product workflow have Playwright evidence. Fleet-map tests cover provenance, filters, selection, tile-failure disclosure and mobile overflow; see the release execution log for scope. Captured screens are listed in the screenshot gallery below.
 - Production use would require validation, monitoring, backup/restore, retention, secret management and regulatory review. None of those are claimed here.
@@ -131,8 +131,8 @@ Captured from the local app against the seeded demo tenant. Seeded readings and 
                                │ SQL (Prisma + selected raw/stored routines)
                                ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ MySQL 8.x / InnoDB                                                     │
-│ 31 tables · 5 views · 4 triggers · 2 procedures · 9 CHECK constraints  │
+│ MySQL 8.4 LTS / InnoDB                                                 │
+│ 31 tables · 5 views · 6 triggers · 2 procedures · 9 CHECK constraints  │
 │ unique/idempotency keys · explicit indexes · UTC timestamps            │
 └────────────────────────────────────────────────────────────────────────┘
 
@@ -193,17 +193,17 @@ The repository includes API and web multi-stage Dockerfiles, an internal-only My
 
 ---
 
-## Local setup with MySQL 8.0
+## Local setup with MySQL 8.4
 
 ### Prerequisites
 
 - Node.js **>= 20.19** (declared in `package.json`).
 - npm (workspaces are used).
-- A local MySQL server. The documented local target is **MySQL 8.0**; the Prisma schema header names **MySQL 8.4 LTS** as its design target. The SQL avoids features that require 8.4, but this repository does not include a verified Compose or 8.4 runtime setup.
+- A local MySQL server. The supported and CI target is **MySQL 8.4 LTS**. Compose and CI both specify `mysql:8.4`; Docker runtime verification is still pending on the current host.
 
 ### 1. Create the database and development user
 
-Example for a local MySQL 8.0 installation:
+Example for a local MySQL 8.4 installation:
 
 ```sql
 CREATE DATABASE frostguard
@@ -245,7 +245,7 @@ Generate strong secrets and replace the development placeholders:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-At minimum, replace `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `DEVICE_HMAC_SECRET` and the database password. Note that refresh tokens are opaque random values, not JWTs, so `JWT_REFRESH_SECRET` is currently required by environment validation but is not used to sign tokens.
+At minimum, replace `JWT_ACCESS_SECRET`, `DEVICE_HMAC_SECRET` and the database password. Refresh tokens are opaque random values whose hashes are stored in MySQL; each refresh-token family remains bound to the organization selected at login.
 
 ### 4. Generate the Prisma client and set up the schema
 
@@ -311,13 +311,12 @@ For production, use `NODE_ENV=production`, unique high-entropy secrets from a se
 
 | Variable | Required | Default / example | Purpose |
 | --- | --- | --- | --- |
-| `NODE_ENV` | No | `development` | `development`, `test` or `production`. Production enables secure cookies. |
+| `NODE_ENV` | No | `production` when unset | `development`, `test` or `production`. Set `development` explicitly for local work. Production enables secure cookies and rejects placeholder secrets. |
 | `API_PORT` | No | `4000` | HTTP listen port. |
 | `API_ORIGIN` | No | `http://localhost:4000` | API origin setting. |
 | `WEB_ORIGIN` | No | `http://localhost:5173` | CORS allowlist; a comma-separated list is split into multiple origins. |
 | `DATABASE_URL` | **Yes** | `mysql://frostguard:...@localhost:3306/frostguard` | MySQL connection string used by Prisma and the SQL applier. |
 | `JWT_ACCESS_SECRET` | **Yes** | development placeholder | HS256 access-token signing secret; minimum 32 characters. |
-| `JWT_REFRESH_SECRET` | **Yes** | development placeholder | Validated and required, but refresh tokens are opaque and this value is not currently used for signing. |
 | `ACCESS_TOKEN_TTL_SECONDS` | No | `900` | Access-token lifetime; minimum 60 seconds. |
 | `REFRESH_TOKEN_TTL_DAYS` | No | `14` | Refresh-token lifetime in days. |
 | `DEVICE_HMAC_SECRET` | No | development placeholder | Shared secret for optional telemetry HMAC signatures; minimum 32 characters. |
@@ -327,7 +326,7 @@ For production, use `NODE_ENV=production`, unique high-entropy secrets from a se
 | `LOG_LEVEL` | No | `info` | Pino log level. |
 | `SEED_DEMO_PASSWORD` | No | `Frostguard#2026` | Password assigned to all seeded demo users. Development only. |
 
-Limits are skipped when `NODE_ENV=test`. Telemetry ingestion has its own fixed limiter of 600 requests per minute, keyed by device key (falling back to IP).
+Limits are skipped when `NODE_ENV=test`. Telemetry ingestion has its own fixed limiter of 600 requests per minute, keyed by the client IP because it runs before device authentication. Rate-limit state is process-local; use one API process unless a shared store is configured.
 
 ---
 
@@ -404,7 +403,7 @@ npm test
 
 The API test suite uses Vitest and Supertest and exercises the real HTTP surface, real Prisma queries and the real MySQL triggers/procedures.
 
-**Verified status for `main` at `5b4c14376d55d81eebaf834cf4f3c982a4ec8524`:** Typecheck, lint, production build, API/MySQL suite (13 files / 70 tests), Playwright suite (5 tests), and GitHub Actions run [41164445859](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41164445859) passed on 2026-10-31. Database tests use only disposable `frostguard_test`; browser tests use the local API and seeded demo organization. Fleet map regression covers position provenance, selection/filter behavior, tile-failure disclosure and mobile overflow. Three high Prisma/deepmerge-ts dependency findings remain; Docker runtime, production map tiles, independent security assessment and hosted deployment remain unverified. See the [release candidate report](docs/audit/RELEASE_CANDIDATE_REPORT.md) and [release execution log](docs/audit/RELEASE_EXECUTION_LOG.md) for evidence and scope.
+**Local verification for the current working revision (2026-10-31):** Typecheck, lint, production build, API/MySQL suite (13 files / 74 tests), Playwright suite (5 tests), clean five-migration deployment, and SQL control application passed. Database tests use disposable `_test` databases on loopback; browser tests use the local API and seeded demo organization. This working revision still requires remote CI after push. Three high Prisma/deepmerge-ts dependency findings remain; Docker Engine runtime, production map tiles, independent security assessment and hosted deployment remain unverified. See the [security test results](docs/security/SECURITY_TEST_RESULTS.md), [release candidate report](docs/audit/RELEASE_CANDIDATE_REPORT.md), and [release execution log](docs/audit/RELEASE_EXECUTION_LOG.md) for prior scope/evidence.
 
 On the audit Windows host, the default `tsx` runner initially failed before Vitest startup with Node `uv_os_get_passwd returned ENOMEM`. The same `npm.cmd test` suite was then executed successfully using a temporary process-only Node preload workaround; the preload was removed afterward. This host-specific issue is documented and does not change project source or test configuration.
 
@@ -463,7 +462,7 @@ See [security controls](docs/security/SECURITY_CONTROLS.md) and the [threat mode
 - OpenAPI schema and `/api/v1/docs` route are implemented; there is no generated API client.
 - No MFA, password reset, change-password, email verification or SSO.
 - No outbound email/SMS/push provider.
-- Latest verified `main` run is [41164445859](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/runs/41164445859) on `5b4c14376d55d81eebaf834cf4f3c982a4ec8524`; three high dependency advisories remain, and no container scanning or SAST configuration is present.
+- Current remote CI status is available in the [GitHub Actions workflow history](https://github.com/karkalashivareddy/cold-chain-monitoring-system/actions/workflows/ci.yml); three high dependency advisories remain, and no container scanning or SAST configuration is present.
 - No evidence of an external penetration test or formal security review.
 - Playwright covers landing, dashboard and 14 authenticated routes, plus a live product workflow; axe-core checks serious/critical findings for the documented route and viewport scope. Lower-impact findings, broader workflows and screen-reader review remain.
 - No hosted production deployment, TLS termination configuration, secret manager, backup/restore automation or retention jobs.
@@ -477,7 +476,6 @@ See [security controls](docs/security/SECURITY_CONTROLS.md) and the [threat mode
 - Data retention and legal hold are not implemented.
 - Risk scoring is a rule-based heuristic and has not been clinically or regulatorily validated.
 - Landing, dashboard, fleet map, products, shipment detail, incidents and analytics have captured screenshots in the [gallery](docs/audit/screenshots/README.md). Automated route checks and screenshots do not establish full WCAG conformance or cover every workflow at every viewport.
-- `JWT_REFRESH_SECRET` is required but unused because refresh tokens are opaque.
 - Local MySQL setup and CI migration checks are documented. Compose syntax parses, but MySQL 8.4/container runtime compatibility remains unverified because the local Docker Engine is unavailable.
 
 ---
@@ -507,4 +505,4 @@ FROSTGUARD is an independently developed student software engineering project by
 
 ## License
 
-**UNLICENSED.** This public repository does not grant permission to redistribute or use the software commercially. See the root `package.json` (`"license": "UNLICENSED"`) and [LICENSE_POLICY.md](docs/LICENSE_POLICY.md). No open-source license is asserted.
+FROSTGUARD project-owned code and documentation are released under the [MIT License](LICENSE). Third-party packages retain their own licenses; the legacy JPEGs and historical screenshot captures identified in the asset register are excluded from the grant because their provenance is unknown. They are not part of the active product or screenshot gallery. See [license policy](docs/LICENSE_POLICY.md) and the [asset provenance register](docs/audit/ASSET_LICENSE_REGISTER.md). The MIT grant does not make FROSTGUARD medically validated or production-certified.

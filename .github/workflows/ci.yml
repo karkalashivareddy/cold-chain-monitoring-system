@@ -52,7 +52,6 @@ jobs:
           DATABASE_URL: mysql://root:root@127.0.0.1:3306/frostguard_test
           NODE_ENV: test
           JWT_ACCESS_SECRET: test-access-secret-0123456789abcdef0123456789abcdef
-          JWT_REFRESH_SECRET: test-refresh-secret-0123456789abcdef0123456789abcdef
 
       - name: Type check
         run: npm run typecheck
@@ -69,7 +68,6 @@ jobs:
           DATABASE_URL: mysql://root:root@127.0.0.1:3306/frostguard_test
           NODE_ENV: test
           JWT_ACCESS_SECRET: test-access-secret-0123456789abcdef0123456789abcdef
-          JWT_REFRESH_SECRET: test-refresh-secret-0123456789abcdef0123456789abcdef
 
       - name: Install Chromium for browser tests
         run: npx playwright install --with-deps chromium
@@ -103,7 +101,6 @@ jobs:
           WEB_ORIGIN: http://127.0.0.1:5173
           DATABASE_URL: mysql://root:root@127.0.0.1:3306/frostguard_test
           JWT_ACCESS_SECRET: test-access-secret-0123456789abcdef0123456789abcdef
-          JWT_REFRESH_SECRET: test-refresh-secret-0123456789abcdef0123456789abcdef
           DEVICE_HMAC_SECRET: test-device-hmac-secret-0123456789abcdef0123456789
           RATE_LIMIT_MAX: 100000
           LOGIN_RATE_LIMIT_MAX: 1000

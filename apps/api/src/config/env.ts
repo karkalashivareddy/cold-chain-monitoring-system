@@ -7,13 +7,13 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
 
 export const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  // Missing deployment mode fails closed: production requires explicit strong secrets.
+  NODE_ENV: z.enum(["development", "test", "production"]).default("production"),
   API_PORT: z.coerce.number().int().default(4000),
   API_ORIGIN: z.string().url().default("http://localhost:4000"),
   WEB_ORIGIN: z.string().url().default("http://localhost:5173"),
   DATABASE_URL: z.string().min(10),
   JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
-  JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(14),
   DEVICE_HMAC_SECRET: z.string().min(32).default("dev-only-device-hmac-secret-change-me-0123456789abcdef"),
@@ -27,7 +27,6 @@ export const envSchema = z.object({
 
   const secrets: Array<[keyof typeof value, string]> = [
     ["JWT_ACCESS_SECRET", value.JWT_ACCESS_SECRET],
-    ["JWT_REFRESH_SECRET", value.JWT_REFRESH_SECRET],
     ["DEVICE_HMAC_SECRET", value.DEVICE_HMAC_SECRET],
     ["SEED_DEMO_PASSWORD", value.SEED_DEMO_PASSWORD],
   ];
@@ -39,13 +38,6 @@ export const envSchema = z.object({
         message: `${name} must be replaced with a unique production secret`,
       });
     }
-  }
-  if (value.JWT_ACCESS_SECRET === value.JWT_REFRESH_SECRET) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["JWT_REFRESH_SECRET"],
-      message: "JWT_REFRESH_SECRET must differ from JWT_ACCESS_SECRET",
-    });
   }
 });
 

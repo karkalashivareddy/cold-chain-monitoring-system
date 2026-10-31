@@ -10,6 +10,11 @@ test("public landing page loads across viewports without browser runtime errors"
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Every degree.");
   await expect(page.getByRole("banner").getByRole("button", { name: /enter console/i })).toBeVisible();
   await expect(page.getByText("ARCHITECTURE VIEW")).toBeVisible();
+  const primaryAction = page.getByRole("banner").getByRole("button", { name: /enter console/i });
+  await primaryAction.hover();
+  await expect
+    .poll(() => primaryAction.evaluate((button) => getComputedStyle(button).filter))
+    .toBe("saturate(1.08) brightness(1.05)");
   const heroArtwork = page.locator(".hero-artwork img");
   await expect(heroArtwork).toBeVisible();
   await expect.poll(() => heroArtwork.evaluate((image) => getComputedStyle(image).animationName)).toBe("fg-hero-drift");

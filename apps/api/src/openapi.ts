@@ -8,6 +8,7 @@ type OperationOptions = {
   parameters?: Array<Record<string, unknown>>;
   body?: boolean;
   bodyRequired?: boolean;
+  bodyDescription?: string;
   csrfProtected?: boolean;
   success?: "200" | "201" | "200-201";
   successContentType?: string;
@@ -28,7 +29,7 @@ const csrfHeaderParameter = {
   schema: { type: "string", enum: ["1"] },
 };
 
-function operation({ id, summary, tag, auth = ["bearerAccess", "accessCookie"], parameters = [], body, bodyRequired = true, csrfProtected = false, success = "200", successContentType, successDescription = "Successful operation." }: OperationOptions) {
+function operation({ id, summary, tag, auth = ["bearerAccess", "accessCookie"], parameters = [], body, bodyRequired = true, bodyDescription, csrfProtected = false, success = "200", successContentType, successDescription = "Successful operation." }: OperationOptions) {
   const successfulCodes = success === "200-201" ? ["200", "201"] : [success ?? "200"];
   const responses: Record<string, unknown> = Object.fromEntries(successfulCodes.map((code) => [
     code,
@@ -58,7 +59,7 @@ function operation({ id, summary, tag, auth = ["bearerAccess", "accessCookie"], 
       ? {
           requestBody: {
             required: bodyRequired,
-            description: "JSON request validated by the endpoint's Zod/shared domain schema.",
+            description: bodyDescription ?? "JSON request validated by the endpoint's Zod/shared domain schema.",
             content: { "application/json": { schema: { type: "object", additionalProperties: true } } },
           },
         }
@@ -145,7 +146,7 @@ export const openApiDocument = {
     "/devices/{id}/rotate-key": { post: post("rotateDeviceKey", "Rotate a device credential", "Devices", { parameters: id("id"), body: false }) },
     "/devices/{id}/revoke": { post: post("revokeDevice", "Revoke a device credential", "Devices", { parameters: id("id"), body: false }) },
     "/telemetry/readings": {
-      post: operation({ id: "ingestTelemetry", summary: "Ingest an authenticated device reading", tag: "Telemetry", auth: ["deviceKey"], body: true, csrfProtected: true, success: "200-201" }),
+      post: operation({ id: "ingestTelemetry", summary: "Ingest an authenticated device reading", tag: "Telemetry", auth: ["deviceKey"], body: true, bodyDescription: "Required fields: deviceId, temperature, recordedAt, bootId, sequenceNumber. Keep bootId stable during one device boot and generate a new value after reboot; sequences are idempotent within a boot. Optional HMAC signatures also cover bootId.", csrfProtected: true, success: "200-201" }),
       get: get("listTelemetryReadings", "Query organization telemetry history", "Telemetry"),
     },
     "/telemetry/latest": { get: get("getLatestTelemetry", "Read latest sensor readings", "Telemetry") },

@@ -56,5 +56,7 @@ export const telemetryLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   skip: () => env.isTest,
-  keyGenerator: (req) => String(req.headers["x-device-key"] ?? ipKeyGenerator(req.ip ?? "unknown")),
+  // This limiter runs before device authentication; keying by a supplied key
+  // would let attackers mint a fresh bucket for every fake credential.
+  keyGenerator: (req) => ipKeyGenerator(req.ip ?? "unknown"),
 });

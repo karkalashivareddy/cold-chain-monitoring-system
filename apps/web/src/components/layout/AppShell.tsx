@@ -167,10 +167,10 @@ export function AppShell() {
                     end={item.end}
                     className={({ isActive }) =>
                       cn(
-                        "group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium transition-colors",
+                        "group nav-link relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium transition-colors",
                         isActive
-                          ? "bg-cyan/10 text-ice shadow-[inset_0_0_0_1px_rgba(56,189,248,0.18)]"
-                          : "text-mist hover:bg-white/[0.04] hover:text-ice"
+                          ? "nav-link-active text-ice"
+                          : "nav-link-idle text-mist hover:text-ice"
                       )
                     }
                   >

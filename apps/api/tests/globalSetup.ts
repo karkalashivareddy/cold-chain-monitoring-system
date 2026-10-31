@@ -2,7 +2,7 @@ import { execSync } from "node:child_process";
 import path from "node:path";
 import mysql from "mysql2/promise";
 
-const DATABASE_URL = "mysql://root:root@localhost:3306/frostguard_test";
+const DATABASE_URL = process.env.TEST_DATABASE_URL ?? "mysql://root:root@localhost:3306/frostguard_test";
 
 /**
  * The integration suite runs against a disposable MySQL database. It is reset
@@ -11,6 +11,13 @@ const DATABASE_URL = "mysql://root:root@localhost:3306/frostguard_test";
  */
 export default async function globalSetup() {
   const url = new URL(DATABASE_URL);
+  const databaseName = decodeURIComponent(url.pathname.replace(/^\//, ""));
+  if (!/_test$/i.test(databaseName)) {
+    throw new Error("Refusing to reset an integration-test database unless its name ends with _test");
+  }
+  if (!new Set(["localhost", "127.0.0.1", "::1"]).has(url.hostname)) {
+    throw new Error("Refusing to reset a non-loopback integration-test database");
+  }
   const connection = await mysql.createConnection({
     host: url.hostname,
     port: Number(url.port || 3306),
@@ -18,7 +25,7 @@ export default async function globalSetup() {
     password: decodeURIComponent(url.password),
   });
   await connection.query(
-    `CREATE DATABASE IF NOT EXISTS \`${url.pathname.replace(/^\//, "")}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+    `CREATE DATABASE IF NOT EXISTS \`${databaseName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
   );
   await connection.end();
 

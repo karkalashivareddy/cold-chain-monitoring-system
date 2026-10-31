@@ -379,6 +379,7 @@ export const telemetryReadingSchema = z.object({
   temperature: z.number().min(-100).max(80),
   humidity: z.number().min(0).max(100).optional().nullable(),
   recordedAt: z.string().datetime({ offset: true }),
+  bootId: z.string().trim().min(8).max(64).regex(/^[a-zA-Z0-9._:-]+$/),
   sequenceNumber: z.number().int().min(1),
   isSimulated: z.boolean().optional().default(false),
   nonce: z.string().min(8).max(64).optional(),

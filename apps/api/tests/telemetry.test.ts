@@ -18,6 +18,7 @@ function reading(overrides: Record<string, unknown>) {
     temperature: 4.2,
     humidity: 48,
     recordedAt: new Date().toISOString(),
+    bootId: "test-boot-0001",
     sequenceNumber: 9100,
     ...overrides,
   };
@@ -112,6 +113,24 @@ describe("device-authenticated telemetry ingestion", () => {
     expect(count).toBe(1);
   });
 
+  it("accepts a rebooted device sequence in a new boot epoch", async () => {
+    const first = await request(app)
+      .post("/api/v1/telemetry/readings")
+      .set("x-device-key", COLD_ROOM_KEY)
+      .send(reading({ bootId: "reboot-epoch-0001", sequenceNumber: 1 }));
+    const reboot = await request(app)
+      .post("/api/v1/telemetry/readings")
+      .set("x-device-key", COLD_ROOM_KEY)
+      .send(reading({ bootId: "reboot-epoch-0002", sequenceNumber: 1 }));
+
+    expect(first.status).toBe(201);
+    expect(reboot.status).toBe(201);
+    expect(reboot.body.data.duplicate).toBe(false);
+    expect(await prisma.sensorReading.count({
+      where: { sensor: { deviceId: "FGS-HYD-C1A" }, sequenceNumber: 1, bootId: { startsWith: "reboot-epoch-" } },
+    })).toBe(2);
+  });
+
   it("rejects a reading outside the accepted clock window", async () => {
     const res = await request(app)
       .post("/api/v1/telemetry/readings")
@@ -130,6 +149,7 @@ describe("device-authenticated telemetry ingestion", () => {
         temperature: 5,
         humidity: 45,
         recordedAt: new Date().toISOString(),
+        bootId: "freezer-test-boot-01",
         sequenceNumber: 9200,
       });
     // Persistence rule requires two consecutive out-of-range readings.
@@ -144,6 +164,7 @@ describe("device-authenticated telemetry ingestion", () => {
         temperature: 5.5,
         humidity: 45,
         recordedAt: new Date().toISOString(),
+        bootId: "freezer-test-boot-01",
         sequenceNumber: 9201,
       });
 

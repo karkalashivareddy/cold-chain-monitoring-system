@@ -2,15 +2,19 @@
 
 Thanks for helping improve FROSTGUARD. It is a demonstration prototype, not a certified cold-chain control system.
 
+Project-owned code and documentation are licensed under MIT; contributions are accepted under the same terms. See [LICENSE](LICENSE) and [license policy](docs/LICENSE_POLICY.md). Do not contribute third-party assets unless their license and attribution are documented.
+
 ## Local setup
 
-Requirements: Node.js 20.19 or newer, npm, and MySQL 8.x with a local development database.
+Requirements: Node.js 20.19 or newer, npm, and MySQL 8.4 LTS with a local development database.
 
 1. Install dependencies: `npm ci`.
 2. Copy `.env.example` to `apps/api/.env` and replace local credentials/secrets as needed. Do not commit `.env` files.
 3. Generate Prisma client: `npm run db:generate`.
 4. Apply migrations, SQL objects and demo seed: `npm run db:setup`.
 5. Start API and web: `npm run dev`.
+
+The telemetry contract requires a stable per-boot `bootId`; send a new one after a device restart so a reset sequence counter is accepted safely. See the API description at `/api/v1/docs`.
 
 The demo seed creates predictable demonstration users and device credentials. Use them only in a disposable local environment.
 
